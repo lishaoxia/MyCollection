@@ -1,0 +1,221 @@
+一  关于expdp和impdp     使用EXPDP和IMPDP时应该注意的事项：
+EXP和IMP是客户端工具程序，它们既可以在客户端使用，也可以在服务端使用。
+EXPDP和IMPDP是服务端的工具程序，他们只能在ORACLE服务端使用，不能在客户端使用。
+IMP只适用于EXP导出的文件，不适用于EXPDP导出文件；IMPDP只适用于EXPDP导出的文件，而不适用于EXP导出文件。
+expdp或impdp命令时，可暂不指出用户名/密码@实例名 as 身份，然后根据提示再输入，如：
+expdp schemas=scott dumpfile=expdp.dmp DIRECTORY=dpdata1;
+一、创建逻辑目录，该命令不会在操作系统创建真正的目录，最好以system等管理员创建。
+create directory dpdata1 as 'd:\test\dump';
+二、查看管理理员目录（同时查看操作系统是否存在，因为Oracle并不关心该目录是否存在，如果不存在，则出错）
+select * from dba_directories;
+三、给scott用户赋予在指定目录的操作权限，最好以system等管理员赋予。
+grant read,write on directory dpdata1 to scott;
+四、导出数据
+1)按用户导
+expdp scott/tiger@orcl schemas=scott dumpfile=expdp.dmp DIRECTORY=dpdata1
+
+2)并行进程parallel
+expdp scott/tiger@orcl directory=dpdata1 dumpfile=scott3.dmp parallel=40 job_name=scott3
+
+3)按表名导
+expdp scott/tiger@orcl TABLES=table1,table2 dumpfile=expdp.dmp DIRECTORY=dpdata1
+
+排除多张表
+expdp sec/sec directory=dump_dir dumpfile=sec.dmp logfile=sec.log EXCLUDE=TABLE:\"IN\(\'T1\',\'T2\'\)\"
+
+如果只是简单的排除以MV开头的表，使用如下命令即可：
+expdp username/password dumpfile=$EXPFILE logfile=$EXPLOG directory=expdir exclude=TABLE:\"LIKE \'MV%\'\"
+
+4)按查询条件导
+expdp scott/tiger@orcl directory=dpdata1 dumpfile=expdp.dmp Tables=emp query='WHERE deptno=20'
+
+多个表时：
+QUERY=emp:\"WHERE username in ('aaa','bb')\",taba:\"WHERE rownum<5\"
+
+5)按表空间导
+expdp system/manager DIRECTORY=dpdata1 DUMPFILE=tablespace.dmp TABLESPACES=temp,example
+
+6)导整个数据库
+expdp system/manager DIRECTORY=dpdata1 DUMPFILE=full.dmp FULL=y
+
+
+五、还原数据
+1)导到指定用户下
+impdp scott/tiger DIRECTORY=dpdata1 DUMPFILE=expdp.dmp SCHEMAS=scott
+
+2)改变表的owner
+impdp system/manager DIRECTORY=dpdata1 DUMPFILE=expdp.dmp TABLES=scott.dept REMAP_SCHEMA=scott:system
+
+3)导入表空间
+impdp system/manager DIRECTORY=dpdata1 DUMPFILE=tablespace.dmp TABLESPACES=example
+
+4)导入数据库
+impdb system/manager DIRECTORY=dump_dir DUMPFILE=full.dmp FULL=y
+
+5)追加数据
+impdp system/manager DIRECTORY=dpdata1 DUMPFILE=expdp.dmp SCHEMAS=system TABLE_EXISTS_ACTION=append
+
+
+ expdp include 用法补充 2013-10-17 10:54:51
+分类： Linux
+最近用expdp备份数据库过期数据用到include，所以从include用法研究到几个细节问题；
+
+1：expdp include 的主要功能是导部分有特征的数据，比如我这次是要将2012的数据表导出备份后，再将2012的表drop。所以我想到用 include：table=‘like’
+因为有引号的存在，需要转义，所以第一个体会就是parfile代替转义，这样省很多麻烦。
+
+2：include：table=‘like’最容易出问题的地方。
+expdp system/system@zldev DIRECTORY=dir_dp SCHEMAS=core_data DUMPFILE=core_data.dmp LOGFILE=core_data.log INCLUDE=TABLE:"LIKE '%BASEDATA2012%'"
+上面的语句看上去毫无破绽，感觉该有的都有了，语法什么都没什么问题，但你运行的时候就会一直报错；
+ORA-39001: invalid argument value
+ORA-39071: Value for INCLUDE is badly formed.
+ORA-00936: missing expression
+我卡在这个地方有那么一两小时，试过一个表，两个表，试过视图，等等。
+后来我发现就是一个空格的问题。就是在LIKE和条件之间，这个地方不能有空格，有空格就会报上述错误。
+正确的是：
+expdp system/system@zldev DIRECTORY=dir_dp SCHEMAS=core_data DUMPFILE=core_data.dmp LOGFILE=core_data.log INCLUDE=TABLE:"LIKE'%BASEDATA2012%'"
+
+
+三、命令行下转义符的处理
+Windows平台:
+    D:\> expdp system/manager DIRECTORY=my_dir DUMPFILE=exp_tab.dmp LOGFILE=exp_tab.log SCHEMAS=scott
+     INCLUDE=TABLE:\"IN ('EMP', 'DEPT')\"
+  
+    在Windows平台下，需要对象双引号进行转义，使用转义符\
+Unix平台:
+    在未使用parfile文件的情形下，所有的符号都需要进行转义，包括括号，双引号，单引号等
+    % expdp system/manager DIRECTORY=my_dir DUMPFILE=exp_tab.dmp LOGFILE=exp_tab.log SCHEMAS=scott
+     INCLUDE=TABLE:\"IN \'EMP\',\'DEP\'\"
+	 
+	 
+	 
+
+
+
+如今在丽江
+
+博客园
+首页
+新随笔
+联系
+管理
+订阅 订阅
+
+
+随笔- 4  文章- 0  评论- 0  
+  
+ 
+
+
+zzw原创_expdp及impdp中的exclude及include参数的那点事 
+
+
+
+
+zzw原创：转载请注明出处
+
+在oracle的expdp 及imdpd命令中，exclude及include参数还是有一些要注意的地方，特别是涉及选择性条件时。
+
+一、通用
+
+1、exclude及include参数不能同时使用，这两个是相互排斥的。
+
+2、在parfile参数文件中，可以同时用多个exclude参数，但只能用一个include参数
+
+3、include、exclude参数是默认就是针对名称操作的：如表名、视图名、过程名、包名等，所以设计条件时，可以从查询语句中先取得这些名称。
+
+4、include、exclude参数中，在escape语句中，不能用\作为转义符
+
+   (1)、include=table:"like 'SEC_%'" 
+     结果：SECAAAROLE、SEC_ROLE、SEC_OPERATION三个表，说明，_依旧表示一个占位符的作用
+
+   （2）、include=table:"like 'SEC\_%'"
+       不能导出SECAAAROLE、SEC_ROLE、SEC_OPERATION三个表，说明在''中,\并不表示转义符
+
+   （3）、include=table:"like 'SEC\_%'escape'\'"  这样会报错：
+       ORA-39001: invalid argument value
+       ORA-39071: Value for INCLUDE is badly formed.
+       ORA-01425: escape character must be character string of length 1
+    （4）、改成这样  include=table:"like 'SEC#_%'escape'#'"
+         可以正确导出SEC_ROLE、SEC_OPERATION二个表，但不能导出SECAAAROLE这个表。结论：在include、exclude参数中，在escape语句中，不能用\作为转义符！！，可以选用选用其他特殊字符作为转义符。如果确实要用\,也要可以用ascii码代替：include=table:"like 'SEC\_%'escape chr(92)"
+
+ 
+
+二、exclude参数用法
+
+a、exclude参数在parfile文件中可以有多个，还有多种写法。
+
+[oracle@test189 temp2]$ vi zzw-expscript_impclude.par 
+DIRECTORY=ZZW_EXPDPDIR
+DUMPFILE=bdctemp1.dmp
+exclude=table:"like 'BDC%'" , table:"like 'USPC%'",table:"like 'AUDIT%'"
+exclude=table:"like 'SMS#_%'escape'#'"
+exclude=table:"in (select table_name from user_tables  where regexp_like(table_name,'^MENU.*')
+or regexp_like(table_name,'^SEC_.*_.*$'))"
+LOGFILE=bdctemp1.log
+
+b、支持换行，比如，上面的语句，在parfile文件中如下换行也是可以的
+
+[oracle@test189 temp2]$ vi zzw-expscript_impclude.par 
+DIRECTORY=ZZW_EXPDPDIR
+DUMPFILE=bdctemp1.dmp
+EXCLUDE=STATISTICS
+exclude=view,table:"like 'BDC%'" ,
+table:"like 'USPC%'",
+table:"like 'AUDIT%'"
+exclude=table:"like 'SMS#_%'escape'#'"
+exclude=table:"in (select table_name from user_tables  where regexp_like(table_name,'^MENU.*') 
+ or regexp_like(table_name,'^SEC_.*_.*$'))"
+LOGFILE=bdctemp1.log
+
+ 
+
+    ps:采用这种exclude=table:"in (select table_name from user_tables)"方法导出时，我环境中会出现 ORA-07445: exception encountered: core dump     [kokemisz()+34] [SIGSEGV] [ADDR:0x18] [PC:0x143F5B6] [Address not mapped to object] []  这样的错误，在parfile文件中加入 EXCLUDE=STATISTICS条件问题就解决了。
+
+
+
+三、include参数用法
+
+a、不允许的写法
+
+    include=table:"='BOSS'" or table:"='SEC_ROLE'"
+
+    include=table:"='BOSS'" , table:"='SEC_ROLE'"
+
+b、允许的写法
+     include=table:"='BOSS'"
+
+    include=table:"in('BOSS','SEC_ROLE')"
+
+    include=table:"in(select table_name from user_tables  where table_name in('BOSS','SEC_ROLE'))"
+
+    include=table:"in(select table_name from user_tables  where regexp_like(table_name,'^BDC_.{4}_.*$'))"   #注意，_在like中表示占位符，在regexp_like不表示占位符。 
+
+     include=table:"in(select table_name from user_tables  where regexp_like(table_name,'^BDC_.{8}_.*$') or regexp_like(table_name,'^ATTACHMENT_.{4}') or  table_name like 'QRTZ#_%'escape'#')"
+
+c、网上有人提供的好方法（http://i.ruby.blog.163.com/blog/static/2479341720137129551334/?suggestedreading&wumii）
+
+   导出某些无规律的表，有很多，也许需要动态维护
+    建立表exp_table
+    create table exp_table (table_name varchar2(100);
+    然后将需要导出的表名插入exp_table中。
+    insert into exp_table values(‘A’);
+    insert into exp_table values(‘B’);
+    insert into exp_table values(‘PUB_GOODS’);
+    insert into exp_table values(‘PUB_GOODS_UNIT’);
+
+    最后导出的的时候：
+    parfile
+    userid=user/passwd
+    directory=expdir
+    dumpfile=testfile.dmp
+    include=table:" in (select table_name from exp_table ) "
+    这样就可以导出exp_table中所包含的所有表了。更神奇的是，可以在exp_table里面将自己也插入进去，然后把exp_table也导出哦
+
+ 
+
+ d、这样的写法是错误的,因为包含两个include语句
+
+    DIRECTORY=ZZW_EXPDPDIR
+    DUMPFILE=bdctemp1.dmp
+    include=table:"='BOSS'"
+    include=table:"='SIMS'"

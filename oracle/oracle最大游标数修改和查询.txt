@@ -1,0 +1,29 @@
+1、查看ORACLE最大游标数
+　　C:\Documents and Settings\Administrator>sqlplus "sys/orcl@orcl as sysdba" 　　
+SQL*Plus: Release 9.2.0.1.0 - Production on 星期四 11月 5 09:08:04 2009
+　　Copyright (c) 1982, 2002, Oracle Corporation. All rights reserved.
+ 
+　　连接到:  www.2cto.com  
+　　Oracle9i Enterprise Edition Release 9.2.0.1.0 - Production
+　　With the Partitioning, OLAP and Oracle Data Mining options
+　　JServer Release 9.2.0.1.0 - Production
+ 
+　　SQL> show parameter open_cursors;
+　　NAME TYPE VALUE
+　　------------------------------------ ----------- ------------------------------
+　　open_cursors integer 300
+ 
+　　2、查看当前打开的游标数目
+　　SQL> select count(*) from v$open_cursor;
+　　COUNT(*)  www.2cto.com  
+　　----------
+　　17494
+ 
+　　3、修改ORACLE最大游标数
+　　SQL> alter system set open_cursors=1000 scope=both;
+　　系统已更改。
+ 
+　　SQL> show parameter open_cursors;
+　　NAME TYPE VALUE
+　　------------------------------------ ----------- ------------------------------
+　　open_cursors integer 1000

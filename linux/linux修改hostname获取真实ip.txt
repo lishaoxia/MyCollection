@@ -1,0 +1,12 @@
+1 、在/etc/hosts文件增加一行
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+10.2.20.50  centos
+
+2、修改/etc/sysconfig/network文件
+HOSTNAME=centos
+
+重启后生效
+
+
+

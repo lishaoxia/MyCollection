@@ -1,0 +1,49 @@
+oracle安装linux时的内核参数解释 2012-06-13 20:50:10
+分类： Oracle
+cat >>/etc/sysctl.conf <<EOF
+kernel.shmall = 2097152
+kernel.shmmax = 536870912
+kernel.shmmni = 4096
+kernel.sem = 250 32000100 128
+fs.file-max = 65536
+net.ipv4.ip_local_port_range = 1024 65000
+net.core.rmem_default=262144
+net.core.rmem_max=262144
+net.core.wmem_default=262144
+net.core.wmem_max=262144
+EOF
+/sbin/sysctl -p
+----------------------------
+kernel.shmmax =2147483648
+//该参数定义了共享内存段的最大尺寸（以字节为单位）。
+kernel.shmmax ----SHMMAXAvailable physical memory Defines the maximum allowable sizeof one sharedmemory segment. The SHMMAX setting should be largeenoughto hold the entire SGA in one shared memory segment. A low settingcancause creation of multiple shared memory segments which may leadtoperformance degradation.
+Shmmax是核心参数中最重要的参数之一，用于定义单个共享内存段的最大值，
+shmmax设置应该足够大，能在一个共享内存段下容纳下整个的SGA ,设置的过低可能会导致需要创建多个共享内存段，这样可能导致系统性能的下降。
+SHMMAX仅仅是在共享内存段被创建的时候用来比较的一个数字，当共享内存段被一个进程(Process)创建，操作系统检查是否被要求的共享内存段的值大于 shmmax 的值，如果是，那么将会抛出一个错误。这个时候系统会创建另外的一个或多个共享内存段满足进程的需求。一般来说，共享内存段个数和系统性能没有太直接的关系，也不会对性能产生太大的影响。
+Steve Adams 在他的小册子中说过，在实例启动以及Server Process 创建的时候，多个小的共享内存段可能会导致当时轻微的系统性能的降低(在启动的时候需要去创建多个虚拟地址段，在进程创建的时候要让进程对多个段进行“识别”，会有一些影响)，但是其他时候都不会有影响。这意味着如果你的程序不是经常 CreateProcesses（以及Destroy Them）,性能方面就不是考虑的问题。
+当然Oralce 的建议是希望一个大的共享内存段能容纳整个SGA，其值应>=sag_max_size初始化参数的大小，还要不小于物理内存的一半，这样在任何时候都不会有甚至轻微的性能下降的隐患。Oracle 安装文档建议 32BitLinux 系统设置shmmax 为32Bit 最大的限制值(setting shmmax to the 32-bit number limit),也就是4G 。
+所以一般来说，1-4G 的物理内存，可以直接设置shmmax为最大物理内存即可，那么SGA 肯定在一个共享内存段中，32Bit Linux 系统物理内存大于4G 的设置为4G 即可 。
+总之，一般设置shmmax >=SGA(32Bit 系统是否支持到1.7G 以上SGA 需要注意) ，缺省为32M，
+如果是64Bit 的Linux 操作系统，shmmax 设置为大于SGA_MAX_SIZE即可。
+Ipcs -sa 可以看到共享内存段个数
+
+kernel.shmmni =4096
+//这个内核参数用于设置系统范围内共享内存段的最大数量。
+kernel.shmmni----shmmni 内核参数是共享内存段的最大数量（注意这个参数不是shmmin,是shmmni, shmmin 表示内存段最小大小 ） 。shmmni 缺省值4096 。
+此值也是在系统中可以启动的Oracle实例的最大数量,通常不需要更改,
+因为显然在生产环境下,一个服务器上同时启动的实例个数达不到这个数量.
+kernel.shmall = 2097152
+//该参数表示系统任意时刻可以分配的所有共享内存段的总和的最大值(以页为单位).
+kernel.shmall----kernel.shmall 参数是控制共享内存页数 。Linux共享内存页大小为4KB,共享内存段的大小都是共享内存页大小的整数倍。一个共享内存段的最大大小是16G，那么需要共享内存页数是16GB/4KB=16777216KB/4KB=4194304 （页），也就是64Bit 系统下16GB 物理内存，设置 kernel.shmall = 4194304才符合要求(几乎是原来设置2097152的两倍)。这时可以将shmmax 参数调整到 16G 了，同时可以修改SGA_MAX_SIZE 和SGA_TARGET为 12G（您想设置的SGA 最大大小，当然也可以是2G~14G 等，还要协调PGA参数及OS 等其他内存使用，不能设置太满，比如16G）。
+其值应不小于shmmax/page_size.缺省值就是2097152，如果服务器上运行的所有实例的
+SGA总和不超过8GB(通常系统可分配的共享内存的和最大值为8GB),通常不需要修改.
+kernel.sem = 250 32000100 128 // 表示设置的信号量
+fs.file-max =65536 // 表示一个进程可以打开的文件句柄的最大数量.
+net.ipv4.ip_local_port_range = 1024 65000//专用服务器模式下与用户进程通信时分配给用户的端口区间
+net.core.rmem_default=262144 // 默认接收缓冲区大小
+net.core.rmem_max=262144 // 接收缓冲区最大值
+net.core.wmem_default=262144 // 默认的发送缓冲区大小
+net.core.wmem_max=262144 // 发送缓冲区最大值
+以上四个值的设置是Oracle安装时推荐的.(应在安装完后把最大值改为524288)
+修改好内核参数后，执行如下命令使新的设置生效
+/sbin/sysctl -p

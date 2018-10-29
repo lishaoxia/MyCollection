@@ -1,0 +1,128 @@
+修改Oracle重做日志文件大小
+
+[日期：2014-11-17]	来源：Linux社区  作者：jxzhfei	[字体：大 中 小]
+
+
+ 
+修改Oracle重做日志文件大小
+
+1.创建3个新的日志组
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 4 ('/data/oradata/procorcl/redo04.log') SIZE 2048M;
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 5 ('/u01/app/oracle/oradata/orcl/redo05.log') SIZE 500M;
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 6 ('/u01/app/oracle/oradata/orcl/redo06.log') SIZE 500M; 
+
+ALTER DATABASE ADD LOGFILE GROUP 4 ('+FRA/snpcldb/onlinelog/redo04.log') SIZE 2048M; 
+
++FRA/snpcldb/onlinelog
+
+查看日志组
+
+SQL> select * from v$logfile;
+
+2.切换当前日志到新的日志组
+
+SQL> alter system switch logfile;
+
+SQL> alter system switch logfile;
+
+SQL> alter system switch logfile; 
+
+切到要删除为INCACTIVE才行 
+
+SQL> select group#,sequence#,bytes/1024/1024 MB,members,status from v$log;
+
+    GROUP#  SEQUENCE#    BYTES    MEMBERS STATUS
+---------- ---------- ---------- ---------- ----------------
+  1  139 52428800  1 INACTIVE
+  2  137 52428800  1 INACTIVE
+  3  138 52428800  1 INACTIVE
+  4  140  524288000  1 ACTIVE
+  5  141  524288000  1 CURRENT
+  6  136  524288000  1 INACTIVE
+
+3.删除旧的日志组
+
+SQL> alter database drop logfile group 5;
+
+Database altered.
+
+SQL> alter database drop logfile group 4;
+
+Database altered.
+
+SQL> alter database drop logfile group 3; 
+
+查看是否删除了日志组
+
+SQL> select group#,sequence#,bytes,members,status from v$log;
+
+    GROUP#  SEQUENCE#    BYTES    MEMBERS STATUS
+---------- ---------- ---------- ---------- ----------------
+  4  140  524288000  1 INACTIVE
+  5  141  524288000  1 CURRENT
+  6  136  524288000  1 INACTIVE
+
+4.操作系统删除原日志组1、2、3中的文件 
+
+[oracle@oracle122 log]$ cd /u01/app/oracle/oradata/orcl
+[oracle@oracle122 orcl]$ 
+[oracle@oracle122 orcl]$ pwd
+/u01/app/oracle/oradata/orcl
+[oracle@oracle122 orcl]$ ls
+control01.ctl  example01.dbf  redo01.log  redo02.log  redo03.log  redo04.log  redo05.log  redo06.log  sysaux01.dbf  system01.dbf  temp01.dbf  undotbs01.dbf  users01.dbf
+[oracle@oracle122 orcl]$ rm -rf redo01.log 
+[oracle@oracle122 orcl]$ rm -rf redo02.log 
+[oracle@oracle122 orcl]$ rm -rf redo03.log 
+
+5.重建日志组1、2、3
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 1 ('/u01/app/oracle/oradata/orcl/redo01.log') SIZE 500M;
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 2 ('/u01/app/oracle/oradata/orcl/redo02.log') SIZE 500M;
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 3 ('/u01/app/oracle/oradata/orcl/redo03.log') SIZE 500M; 
+
+7.删除中间过渡用的日志组4、5、6 ，在删除时查询select group#,sequence#,bytes,members,status from v$log; 删除组是否为INACTIVE，如果不是INACTIVE 就要执行alter system switch logfile;
+
+查询看一下
+
+SQL> select group#,sequence#,bytes,members,status from v$log;
+
+    GROUP#  SEQUENCE#    BYTES    MEMBERS STATUS
+---------- ---------- ---------- ---------- ----------------
+  1  148  524288000  1 CURRENT
+  2  143  524288000  1 INACTIVE
+  3  144  524288000  1 INACTIVE
+  4  146  524288000  1 INACTIVE
+  5  147  524288000  1 INACTIVE
+  6  145  524288000  1 INACTIVE 
+
+SQL> alter database drop logfile group 4;
+
+Database altered.
+
+SQL> alter database drop logfile group 5;
+
+Database altered.
+
+SQL> alter database drop logfile group 6;
+
+Database altered.
+
+8.到操作系统删除组4、5、6
+
+[oracle@oracle122 orcl]$ rm -rf redo04.log 
+[oracle@oracle122 orcl]$ rm -rf redo05.log 
+[oracle@oracle122 orcl]$ rm -rf redo06.log 
+
+9.备份当前最新的控制文件
+
+SQL>  alter database backup controlfile to trace resetlogs  ;
+
+
+
+
+ALTER DATABASE ADD LOGFILE thread 1 group 1 SIZE 2048M;

@@ -1,0 +1,21 @@
+
+本帖最后由 wolfreturn 于 2015-5-28 15:07 编辑
+
+
+dba是普通dba权限，与sysdba不同
+SYSDBA不是权限，当用户以SYSDBA身份登陆数据库时，登陆用户都会变成SYS。
+sysdba身份登陆可以打开，关闭数据库，创建SPFILE，对数据库进行恢复操作等，而这些是DBA角色无法实现的
+
+
+
+select * from v$pwfile_users;
+
+用上面这条语句查看system是否有sysdba权限。
+
+SYS@PROD1 > select * from v$pwfile_users;
+
+USERNAME                       SYSDB SYSOP SYSAS
+------------------------------ ----- ----- -----
+SYS                            TRUE  TRUE  FALSE
+SYSTEM                         TRUE  FALSE FALSE
+如果返回system用户就是有 不返回就是没有。。。

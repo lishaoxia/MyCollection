@@ -1,0 +1,71 @@
+
+ORA-01940无法删除当前已连接用户
+
+
+最近Oracle把哦整爽老。哇哈哈。。
+
+
+原文地址：ORA-01940无法删除当前已连接用户作者：1736188794
+
+1)查看用户的连接状况 
+select username,sid,serial# from v$session
+
+------------------------------------------
+
+如下结果：
+
+ 
+
+username          sid                serial#
+
+----------------------------------------
+
+NETBNEW          513              22974
+NETBNEW          514              18183
+NETBNEW          516              21573
+NETBNEW          531              9
+WUZHQ             532              4562
+
+(2)找到要删除用户的sid,和serial，并删除
+
+-------------------------------------------
+
+如：你要删除用户'WUZHQ',可以这样做：
+
+ 
+
+alter system kill session'532,4562'
+
+ 
+
+(3)删除用户
+
+--------------------------------------------
+
+drop user username cascade
+
+ 
+
+(**)如果在drop 后还提示ORA-01940:无法删除当前已链接的用户，说明还有连接的session，可以通过查看session的状态来确定该session是否被kill 了，用如下语句查看：
+
+-------------------------------------
+
+select saddr,sid,serial#,paddr,username,status from v$session where username is not null
+
+结果如下(以我的库为例)：
+
+ saddr                     sid           serial#            paddr              username              status
+
+--------------------------------------------------------------------------------------------------------
+
+564A1E28              513           22974            569638F4        NETBNEW             ACTIVE
+564A30DC              514          18183            569688CC        NETBNEW            INACTIVE
+564A5644              516           21573            56963340        NETBNEW            INACTIVE
+564B6ED0              531           9                   56962D8C        NETBNEW            INACTIVE
+564B8184              532          4562               56A1075C        WUZHQ                KILLED
+
+ 
+
+status 为要删除用户的session状态，如果还为inactive，说明没有被kill掉，如果状态为killed，说明已kill。
+
+由此可见，WUZHQ这个用户的session已经被杀死。此时可以安全删除用户。

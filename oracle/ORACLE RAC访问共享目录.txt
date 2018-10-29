@@ -1,0 +1,35 @@
+
+RAC如何在共享磁盘中创建文件夹
+标签： asmcmd在共享磁盘创建文件夹
+2015-10-14 16:57 362人阅读 评论(0) 收藏 举报
+分类：
+Linux（48） Oracle RAC（54）
+
+版权声明：本文为博主原创文章，如若转载请注明转载地址。
+
+RAC11gR2设置控制文件RMAN备份，备份到asm管理的data磁盘的ctrlbak/下，结果报错
+
+[html] view plain copy
+
+    ORA-01580: error creating control backup file +DATA/<span><span>ctrlbak</span></span>/snapcf_orcl.f  
+    ORA-17502: ksfdcre:4 Failed to create file +DATA/<span><span>ctrlbak</span></span>/snapcf_orcl.f  
+    ORA-15173: entry '<span><span>ctrlbak</span></span>' does not exist in directory '/'  
+
+
+当时有点蒙，共享磁盘不自己常见路径的么？这咋搞？后来想起来asm磁盘管理工具asmcmd了
+
+[html] view plain copy
+
+    [grid@lmrac1 ~]$ asmcmd  
+    ASMCMD> ls  
+    DATA/  
+    FRA/  
+    OCR/  
+    ASMCMD> cd DATA  
+    ASMCMD> ls  
+    ORCL/  
+    ASMCMD> mkdir ctrlbak  
+    ASMCMD> ls  
+    ORCL/  
+    ctrlbak/  
+    ASMCMD>   

@@ -1,0 +1,52 @@
+linux/windows下利用JDK自带的工具获取thread dump文件和heap dump文件
+
+
+windows查看pid: tasklist
+
+在上一篇博客http://blog.csdn.net/aitangyong/article/details/24009283中介绍了dump的一些基本概念，这一篇博客介绍如何在windows/Linux平台下获取dump文件，
+为后续的学习打下基础。我们使用的JDK工具在JDK_HOME/bin/目录下，使用到jmap和jstack这2个命令。
+   
+在故障定位(尤其是out of memory)和性能分析的时候，经常会用到一些文件来帮助我们排除代码问题。这些文件记录了JVM运行期间的内存占用、线程执行等情况，
+这就是我们常说的dump文件。常用的有heap dump和thread dump（也叫javacore，或Java dump）。我们可以这么理解：heap dump记录内存信息的，
+thread dump是记录CPU信息的。
+
+heap dump：
+heap dump文件是一个二进制文件，它保存了某一时刻JVM堆中对象使用情况。HeapDump文件是指定时刻的Java堆栈的快照，是一种镜像文件。
+Heap Analyzer工具通过分析HeapDump文件，哪些对象占用了太多的堆栈空间，来发现导致内存泄露或者可能引起内存泄露的对象。
+
+thread dump：
+thread dump文件主要保存的是java应用中各线程在某一时刻的运行的位置，即执行到哪一个类的哪一个方法哪一个行上。
+thread dump是一个文本文件，打开后可以看到每一个线程的执行栈，以stacktrace的方式显示。通过对thread dump的分析可以得到应用是否“卡”在某一点上，
+即在某一点运行的时间太长，如数据库查询，长期得不到响应，最终导致系统崩溃。单个的thread dump文件一般来说是没有什么用处的，
+因为它只是记录了某一个绝对时间点的情况。比较有用的是，线程在一个时间段内的执行情况。
+两个thread dump文件在分析时特别有效，困为它可以看出在先后两个时间点上，线程执行的位置，
+如果发现先后两组数据中同一线程都执行在同一位置，则说明此处可能有问题，因为程序运行是极快的，如果两次均在某一点上，
+说明这一点的耗时是很大的。通过对这两个文件进行分析，查出原因，进而解决问题。
+
+获取heap dump文件
+windows下切换到JDK_HOME/bin/，执行以下命令：jmap -dump:format=b,file=m.hprof 4612 
+linux下切换到JDK_HOME/bin/，执行以下命令：./jmap -dump:format=b,file=m.hprof 4612
+这样就会在当前目录下生成m.hprof文件，这就是heap dump文件。
+jmap -heap pid
+
+ 
+获取thread dump文件
+windows下执行：jstack 4612 > 1.txt
+linux下执行：./jstack 4612 > 1.txt
+windows/linux则会将命令执行结果转储到1.txt，这就是thread dump文件。有了dump文件后，我们就能借助性能分析工具获取dump文件中的信息。
+
+如果我们只需要将dump中存活的对象导出，那么可以使用:live参数
+jmap -dump:live,format=b,file=m.hprof 4612  
+
+
+
+
+
+
+
+/opt/jdk1.7.0_80/bin/jstack 13307 >/opt/test.log
+
+
+jstat -gcutil pid  3000				(3000ms)
+
+FGC  FGCT

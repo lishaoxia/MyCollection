@@ -1,0 +1,8 @@
+1、ctrl +c
+2、shutdown abort;
+3.startup
+
+
+--shutdown transactional  阻止建立新的连接，阻止开始新的事务；等待用户未提交的事务执行完毕后，立即断开用户的连接；
+--shutdown immediate      阻止建立新的连接，阻止开始新的事务；任何未提交的事务均被回退；
+--shutdown abort          阻止建立新的连接，阻止开始新的事务；立即结束当前执行的sql语句，任何未提交的事务均不被回退；

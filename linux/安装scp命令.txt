@@ -1,0 +1,28 @@
+安装scp命令
+2015-06-10 09:56:27
+标签：available command package 服务器 输入密码
+今天用scp命令从服务器上复制文件，结果提示：
+-bash: scp: command not found
+想当然用yum install scp命令安装，结果提示：
+
+No package scp available.
+
+解决:
+由上可见提供的软件包一定不是叫scp
+一般情况下服务器都有scp ,于是找一台以前有scp 的机器查看一下 此命令由哪个软件包提供
+[root@localhost ~]# which scp
+/usr/bin/scp
+[root@localhost ~]# rpm -qf /usr/bin/scp
+openssh-clients-5.3p1-94.el6.x86_64
+
+于是可见scp这东西应该属于openssh-clients这个包，运行：
+
+yum -y install openssh-clients
+再运行scp就可以了，再次运行：
+
+如果输入密码后又再次提示：
+bash: scp: command not found
+在另外服务器上也执行了
+yum -y install openssh-clients
+
+两台服务器都安装scp之后才能互相scp。

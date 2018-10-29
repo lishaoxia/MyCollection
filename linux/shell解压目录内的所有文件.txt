@@ -1,0 +1,16 @@
+ shell解压当前目录下的全部.tar.gz文件
+1、
+#!/bin/sh  
+  
+ls *.tar.gz > list.txt  
+  
+for TAR in `cat list.txt`  
+do  
+        tar zxf $TAR  
+done  
+  
+rm -rf list.txt  
+
+2、for file in `ls *.tar`;do tar -xvf $file;done
+
+

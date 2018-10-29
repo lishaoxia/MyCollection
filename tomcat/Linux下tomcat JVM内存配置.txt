@@ -1,0 +1,59 @@
+Linux下tomcat JVM内存 配置
+
+博客分类： OS--Linux
+JVMTomcatLinuxJava应用服务器 
+常见的内存溢出有以下两种:
+java.lang.OutOfMemoryError: PermGen space
+java.lang.OutOfMemoryError: Java heap space
+
+一、java.lang.OutOfMemoryError: PermGen space
+PermGen space的全称是Permanent Generation space,是指内存的永久保存区域,
+这块内存主要是被JVM存放Class和Meta信息的,Class在被Loader时就会被放到PermGen space中,
+它和存放类实例(Instance)的Heap区域不同,GC(Garbage Collection)不会在主程序运行期对
+PermGen space进行清理，所以如果你的应用中有很多CLASS的话,就很可能出现PermGen space错误,
+这种错误常见在web服务器对JSP进行pre compile的时候。如果你的WEB APP下都用了大量的第三方jar, 其大小
+超过了jvm默认的大小(4M)那么就会产生此错误信息了。
+解决方法： 手动设置MaxPermSize大小
+建议：将相同的第三方jar文件移置到tomcat/shared/lib目录下，这样可以达到减少jar 文档重复占用内存的目的。
+ 
+二、java.lang.OutOfMemoryError: Java heap space 
+JVM堆的设置是指java程序运行过程中JVM可以调配使用的内存空间的设置.JVM在启动的时候会自动设置Heap size的值，
+其初始空间(即-Xms)是物理内存的1/64 ，最大空间(-Xmx)是物理内存的1/4 。可以利用JVM提供的-Xmn -Xms -Xmx等选项可
+进行设置。Heap size 的大小是Young Generation 和Tenured Generaion 之和。
+提示：在JVM中如果98％的时间是用于GC且可用的Heap size 不足2％的时候将抛出此异常信息。
+提示：Heap Size 最大不要超过可用物理内存的80％，一般的要将-Xms和-Xmx选项设置为相同，而-Xmn为1/4的-Xmx值。 
+解决方法：手动设置Heap size
+ 
+ 
+----------------------Linux下修改TomcatJVM内存大小----------------------
+要添加在tomcat 的bin 下catalina.sh 里，位置cygwin=false前 。注意引号要带上,红色的为新添加的.
+# OS specific support.  $var _must_ be set to either true or false.
+JAVA_OPTS="-Xms256m -Xmx512m -Xss1024K -XX:PermSize=128m -XX:MaxPermSize=256m" 
+cygwin=false
+ 
+----------------------windows下修改Tomcat JVM内存大小----------------------
+情况一:解压版本的Tomcat , 要通过startup.bat启动tomcat才能加载配置
+要添加在tomcat 的bin 下catalina.bat 里
+rem Guess CATALINA_HOME if not defined
+set CURRENT_DIR=%cd%后面添加,红色的为新添加的.
+set JAVA_OPTS=-Xms256m -Xmx512m -XX:PermSize=128M -XX:MaxNewSize=256m -XX:MaxPermSize=256m -Djava.awt.headless=true
+ 
+情况二:安装版的Tomcat ,没有catalina.bat
+ 
+安装版的Tomcat下没有catalina.bat
+如果tomcat 6 注册成了windows服务，或者windows2003下用tomcat的安装版， 
+在/bin/tomcat6w.exe里修改就可以了 。 
+
+如果tomcat 5, windows服务执行的是bin\tomcat.exe.他读取注册表中的值,而不是catalina.bat的设置.
+修改注册表HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Tomcat Service Manager\Tomcat5\Parameters\JavaOptions
+原值为
+-Dcatalina.home="C:\ApacheGroup\Tomcat 5.0"
+-Djava.endorsed.dirs="C:\ApacheGroup\Tomcat 5.0\common\endorsed"
+-Xrs
+加入 -Xms300m -Xmx350m 
+重起tomcat服务,设置生效
+
+---------------------------------------------------------
+各参数的比例:
+Xmx 与PermSize的和不可超过JVM可获得的总内存
+PermSize不可大于Xmx

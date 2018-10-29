@@ -1,0 +1,227 @@
+
+--IMP导入
+IMP TEST/TEST@10.2.32.1:1521/ORCL FILE=D:\TEST.DMP LOG=D:\TEST.LOG GRANTS=N FULL=Y STATISTICS=NONE
+
+IMP XWCB/XWCB@10.2.32.1:1521/ORCL FILE=E:\库备份\xwcb20161229\xwcb20161229.dmp  LOG=E:\库备份\xwcb20161229\xwcb20161229.log GRANTS=N FULL=Y STATISTICS=NONE
+IMP XWCB2/XWCB2@10.2.32.1:1521/ORCL fromuser=XWCB touser=XWCB2 FILE=E:\库备份\xwcb20161229\xwcb20161229.dmp  LOG=E:\库备份\xwcb20161229\xwcb20161229.log GRANTS=N STATISTICS=NONE
+--EXP导出
+EXP TEST/TEST@10.2.32.1:1521/ORCL FILE=D:\TEST.DMP LOG=D:\TEST.LOG GRANTS=N FULL=N STATISTICS=NONE
+
+--IMPDP导入
+IMPDP SNP/SNP@10.6.109.192:1521/dsfa SCHEMAS=SNP DIRECTORY=DATA_PUMP_DIR DUMPFILE=SNP1014sheng.DMP LOGFILE=SNP1028.LOG 
+IMPDP SNP/SNP@10.2.32.1:1521/orcl SCHEMAS=SNP DIRECTORY=DATA DUMPFILE=SNP1014sheng.DMP LOGFILE=SNP1028.LOG 
+IMPDP SNPFQ/SNPFQ@10.2.32.105:1521/orcl SCHEMAS=SNPFQ DIRECTORY=DPDATA1 DUMPFILE=SNP1116sheng.DMP LOGFILE=SNP1116sheng03.log 
+table_exists_action=skip ：默认操作    table_exists_action=replace(先drop表，然后创建表，最后插入数据)   table_exists_action=truncate（删除已存在表的数据） table_exists_action=append：在原来数据的基础上增加数据
+
+--EXPDP导出
+EXPDP SNP/SNP@10.2.32.1:1521/ORCL SCHEMAS=SNP DIRECTORY=DATA DUMPFILE=SNP0116.DMP LOGFILE=SNP0116.LOG STATISTICS=NONE PARALLEL=4 VERSION=10.2.0.1.0
+EXPDP XWCB2/XWCB2@10.2.32.1:1521/ORCL SCHEMAS=XWCB2 DIRECTORY=DATA DUMPFILE=XWCB0105.DMP LOGFILE=XWCB0105.LOG STATISTICS=NONE PARALLEL=4 VERSION=10.2.0.1.0
+EXPDP SNPXM/SNPXM@10.2.32.105:1521/ORCL SCHEMAS=SNPXM DIRECTORY=DPDATA1 DUMPFILE=SNPXM.DMP LOGFILE=SNPXM.LOG STATISTICS=NONE PARALLEL=4 VERSION=10.2.0.1.0
+
+EXPDP SNP2/******** directory=DATA tables=SNP_R601,SNP_R601_21B,SNP_R601_22,SNP_R601_ACCEPT_LOG_XIANG cluster=n parallel=20 dumpfile=DBbackup_601_FULL_201704152333_%U.dmp logfile=DATA_PUMP_DIR:DBbackup_601_FULL_201704152333.log
+cluster=n (这个参数可以控制是否采用多实例导出,EXPDP语句中加入CLUSTER=N，强制不使用集群导出，即在本机导出，不会导出到别的节点上。RAC导出用)
+logfile=DATA_PUMP_DIR:DBbackup_601_FULL_201704152333.log (logfile不能指定到共享存储上)
+
+--EXPDP按查询条件导出表的部分数据
+expdp SNPZJ/SNPZJ@10.2.32.1:1521/orcl directory=DATA dumpfile=expdptest.dmp Tables=snp_r601_22 query=snp_r601_22:\"where exists (select 1 from snp_r601,snp_r601_22 where snp_r601.recid=snp_r601_22.mrecid)\"
+expdp SNPZJ/SNPZJ@10.2.32.1:1521/orcl directory=DATA dumpfile=expdptest.dmp Tables=snp_r601_22 query=snp_r601_22:\"WHERE mrecid in (select recid from snp_r601 where snp_r601.unitid in(\'B6049F6C59E575E38BE253A5A3B4ECA5\'))\"
+多个表时：
+QUERY=emp:\"WHERE username in ('aaa','bb')\",taba:\"WHERE rownum<5\"
+
+--转换表空间和用户，xxxx代表导出前的表空间名，TEST代表新的表空间名，table_exists_action=replace参数替换已存在的表
+IMPDP SNP/SNP@10.6.109.192:1521/dsfa REMAP_TABLESPACE=XXXX:TEST REMAP_SCHEMA=XXXX:TEST DIRECTORY=DATA_PUMP_DIR DUMPFILE=XXXX.DMP LOGFILE=TEST.LOG
+IMPDP SNP/SNP@10.2.32.105:1521/orcl REMAP_TABLESPACE=SNPDATA2:SNP REMAP_SCHEMA=SNPC2:SNP DIRECTORY=DATA_PUMP_DIR DUMPFILE=SNP.DMP LOGFILE=SNP.LOG 
+IMPDP SNP2/SNP2@10.2.32.105:1521/orcl REMAP_TABLESPACE=SNP:SNP2 REMAP_SCHEMA=SNP:SNP2 DIRECTORY=DATA_PUMP_DIR DUMPFILE=SNP0926sheng.DMP LOGFILE=SNP0926.LOG
+IMPDP SNPFQ/SNPFQ@10.2.32.105:1521/orcl REMAP_TABLESPACE=SNP:SNPFQ REMAP_SCHEMA=SNP:SNPFQ DIRECTORY=DPDATA1 DUMPFILE=SNP1207.DMP LOGFILE=SNP120703.LOG
+IMPDP XWCB/XWCB@10.2.32.1:1521/ORCL DIRECTORY=DATA DUMPFILE=xwcb201706091126.dmp LOGFILE=XWCB0620.LOG tables=XWCB.NB_JT  table_exists_action=truncate
+IMPDP SNPXM2/SNPXM2@10.2.32.105:1521/ORCL REMAP_TABLESPACE=SNPXM:SNPXM2 REMAP_SCHEMA=SNPXM:SNPXM2 DIRECTORY=DPDATA1 DUMPFILE=SNPXM.DMP LOGFILE=IMPDPSNPXM.LOG
+
+IMPDP SNPBT/SNPBT@10.2.32.105:1521/ORCL REMAP_TABLESPACE=SNP:SNPBT REMAP_SCHEMA=SNP:SNPBT DIRECTORY=DPDATA1 DUMPFILE=snp_bt.dmp LOGFILE=snp_bt.log
+
+IMPDP SNPBT/SNPBT@10.2.32.105:1521/ORCL REMAP_TABLESPACE=SNP:SNPBT REMAP_SCHEMA=SNP:SNPBT DIRECTORY=DPDATA1 DUMPFILE=liaoning0224.DMP LOGFILE=liaoming022401.log
+IMPDP SNPCS/SNPCS@10.2.32.105:1521/ORCL REMAP_TABLESPACE=SNP:SNPCS REMAP_SCHEMA=SNP:SNPCS DIRECTORY=DPDATA1 DUMPFILE=liaoning0224.DMP LOGFILE=liaoming022401.log
+
+IMPDP SNPCS/SNPCS@10.2.32.105:1521/orcl  directory=DPDATA1 REMAP_TABLESPACE=SNP:SNPCS REMAP_SCHEMA=SNP:SNPCS tables=SNP.SNP_SUMCALCZB,SNP.SNP_SUMSHARE  dumpfile=henan02240.dmp logfile=henan022402.log
+
+IMPDP SNPXM/SNPXM@10.2.32.105:1521/ORCL REMAP_TABLESPACE=SNP:SNPXM REMAP_SCHEMA=SNP:SNPXM DIRECTORY=DPDATA1 DUMPFILE=17620.DMP logfile=17620.log EXCLUDE=TABLE:\"IN('B0801_PLANTASKLOG')\"
+IMPDP XWCB/XWCB@10.2.32.1:1521/ORCL DIRECTORY=DATA DUMPFILE=xwcb201707101508.dmp logfile=xwcb201707101508.log EXCLUDE=TABLE:\"IN('B0605_LOGINFO','RP_PRINTTEMPLATE')\"
+IMPDP XWCB/XWCB@10.2.32.1:1521/ORCL DIRECTORY=DATA DUMPFILE=xwcb201707101508.dmp logfile=xwcb201707101508.log INCLUDE=TABLE:\"IN('RP_PRINTTEMPLATE')\" table_exists_action=truncate
+
+IMPDP SNPBT/SNPBT@10.2.32.105:1521/orcl  directory=DPDATA1 REMAP_TABLESPACE=SNP:SNPBT REMAP_SCHEMA=SNP:SNPBT  dumpfile=liaoning02240.dmp logfile=liaoning022402.log
+
+IMPDP SNPZJ/SNPZJ@10.2.32.1:1521/ORCL REMAP_TABLESPACE=SNP:SNPZJ REMAP_SCHEMA=SNP:SNPZJ DIRECTORY=DATA DUMPFILE=SNP330110.DMP LOGFILE=SNP330816.log 
+IMPDP SNPZJ/SNPZJ@10.2.32.105:1521/ORCL REMAP_TABLESPACE=SNP:SNPZJ REMAP_SCHEMA=SNP:SNPZJ DIRECTORY=DPDATA1 DUMPFILE=SNP330110.DMP LOGFILE=0815.log
+
+--查询所有用户
+select username from dba_users;
+select username from all_users;
+select username from user_users;
+
+--删除用户
+DROP USER SNP CASCADE;
+
+--查询所有表空间
+select tablespace_name from dba_tablespaces; 
+select tablespace_name from user_tablespaces; 
+
+--删除表空间
+DROP TABLESPACE XJSNP2 INCLUDING CONTENTS AND DATAFILES CASCADE CONSTRAINTS;
+
+--创建临时表空间
+create temporary tablespace SNPTMP tempfile '/u01/app/oracle/oradata/dsfa/SNP.dbf' size 50m autoextend on next 50m maxsize 32700m extent management local; 
+
+--建普通表空间
+create tablespace SNP2 logging datafile '/opt/oracle/oradata/orcl/SNP2.dbf' size 50m autoextend on next 50m extent management local; 
+CREATE TABLESPACE SNPBT logging DATAFILE '/opt/oraclebase/oradata/SNPBT.dbf' SIZE 50M AUTOEXTEND ON NEXT 5M  EXTENT MANAGEMENT LOCAL;
+
+CREATE TABLESPACE XWCB logging DATAFILE 'E:\APP\ADMINISTRATOR\ORADATA\ORCL\XWCB.DBF' SIZE 50M AUTOEXTEND ON NEXT 5M  EXTENT MANAGEMENT LOCAL;
+
+
+
+--建用户
+CREATE USER XWCB IDENTIFIED BY XWCB DEFAULT TABLESPACE XWCB;
+CREATE USER SNP2 IDENTIFIED BY SNP2 DEFAULT TABLESPACE SNP2 TEMPORARY TABLESPACE TEMP;
+
+--已存在用户
+ALTER USER SNP2  DEFAULT TABLESPACE SNP2 ;
+
+--给用户授权
+GRANT CONNECT,RESOURCE TO XWCB WITH ADMIN OPTION;
+GRANT DBA,CONNECT,RESOURCE TO SNP2 WITH ADMIN OPTION;
+
+GRANT CONNECT,RESOURCE TO XWCB WITH ADMIN OPTION;
+CALL SYS.GET();
+
+--目录创建好之后，就可以把读写权限授予特定用户：
+grant read,write on directory DPDATA1 to XJSNP2;
+
+--去掉某某用户的权限
+revoke dba from 用户;
+
+--普通用户执行以下语句可以获得CONNECT,RESOURCE授权权限
+CALL SYS.GET();
+
+--普通用户执行以下语句可以将密码重置为用户名大写全拼，并解锁用户，替换test即可
+CALL SYS.RESET('test');
+
+--扩展表空间，扩展之前请先查询占用情况，且确定已经先处理大表
+ALTER DATABASE DATAFILE 'E:\APP\ADMINISTRATOR\ORADATA\ORCL\TEST.ORA' AUTOEXTEND ON NEXT 5M MAXSIZE 15000M;
+
+--创建逻辑目录，该命令不会在操作系统创建真正的目录，最好以system等管理员创建。
+create directory dpdata1 as 'd:\test\dump';
+
+--查看当前用户下占用空间超过100M的表
+SELECT * FROM SYS.PASS100;
+
+--查询指定表空间磁盘占用情况，修改最后的TEST（表空间名大写）
+SELECT * FROM SYS.USED_DISK WHERE TABLESPACE_NAME='TEST';
+
+--当前的连接数
+SELECT COUNT(*) FROM V$PROCESS;
+
+--数据库允许的最大连接数
+SELECT VALUE FROM V$PARAMETER WHERE NAME = 'processes';
+
+--查看字符集
+SELECT * FROM V$NLS_PARAMETERS;
+SELECT USERENV('LANGUAGE') FROM DUAL;  
+
+--查看oracle 用户执行的sql语句历史记录
+select * from v$sqlarea t where t.PARSING_SCHEMA_NAME in ('用户名') order by t.LAST_ACTIVE_TIME desc
+注意 ：执行此语句等等一些相关的语句 必须具有DBA 的权限 
+
+oracle 查询最近执行过的 SQL语句
+select sql_text,last_load_time from v$sql order by last_load_time desc;
+ 
+SELECT   sql_text, last_load_time FROM v$sql WHERE last_load_time IS NOT NULL and sql_text like 'select%' ORDER BY last_load_time DESC;
+ 
+SELECT   sql_text, last_load_time FROM v$sql WHERE last_load_time IS NOT NULL and sql_text like 'update%' ORDER BY last_load_time DESC;
+
+SELECT   sql_text, last_load_time FROM v$sql WHERE last_load_time IS NOT NULL and last_load_time like' 14-06-09%' ORDER BY last_load_time DESC;
+
+
+解除ORA-2800：the account is locked
+一、解决办法
+1.cmd -> sqlplus /nolog
+2.SQL> connect /as sysdba
+3.SQL> alter user scott account unlock;
+
+二、修改帐号口令
+SQL> alter user scott identified by tiger;
+
+
+
+ORA-01940无法删除当前已连接用户
+
+最近Oracle把哦整爽老。哇哈哈。。
+
+原文地址：ORA-01940无法删除当前已连接用户作者：1736188794
+1)查看用户的连接状况
+select username,sid,serial# from v$session
+
+------------------------------------------
+
+如下结果：
+
+ 
+
+username          sid                serial#
+
+----------------------------------------
+
+NETBNEW          513              22974
+NETBNEW          514              18183
+NETBNEW          516              21573
+NETBNEW          531              9
+WUZHQ             532              4562
+
+(2)找到要删除用户的sid,和serial，并删除
+
+-------------------------------------------
+
+如：你要删除用户'WUZHQ',可以这样做：
+
+ 
+
+alter system kill session'532,4562'
+
+ 
+
+(3)删除用户
+
+--------------------------------------------
+
+drop user username cascade；
+
+
+
+select * from dba_data_files t where t.TABLESPACE_NAME='SNP'  --查看表空间的数据文件
+
+ALTER TABLESPACE SNP ADD DATAFILE '/opt/oraclebase/oradata/SNP_01.dbf' SIZE 50M AUTOEXTEND ON NEXT 5M; --给表空间增加数据文件。
+
+--查看表空间总量，使用量，使用率。
+SELECT 
+    TOTAL.TABLESPACE_NAME AS TABLESPACE_NAME,
+    ROUND((TOTAL.MB - CASE WHEN FREE.MB IS NULL THEN 0 ELSE FREE.MB END)/TOTAL.MAX_MB * 100, 0) AS "已用百分比(%)",
+    ROUND(TOTAL.MB - CASE WHEN FREE.MB IS NULL THEN 0 ELSE FREE.MB END, 2) AS "已用大小(MB)",
+    ROUND(TOTAL.MAX_MB, 2) AS "最大文件大小(MB)"
+  FROM (SELECT TABLESPACE_NAME, SUM(BYTES) / 1024 / 1024 AS MB FROM DBA_FREE_SPACE GROUP BY TABLESPACE_NAME) FREE,
+       (SELECT TABLESPACE_NAME, SUM(BYTES) / 1024 / 1024 AS MB,SUM(CASE WHEN AUTOEXTENSIBLE='NO' THEN BYTES ELSE MAXBYTES END) / 1024 / 1024 AS MAX_MB FROM DBA_DATA_FILES GROUP BY TABLESPACE_NAME) TOTAL
+  WHERE TOTAL.TABLESPACE_NAME= FREE.TABLESPACE_NAME(+) and TOTAL.TABLESPACE_NAME='SNP';
+
+
+  alter user SNP default tablespace SNP temporary tablespace SNPTMP;--重新指定临时表空间。
+
+ 一 查询scott用户默认表空间，默认临时表空间
+select username,default_tablespace,temporary_tablespace from dba_users where username='SNP';
+二 查询scott用户下所有表使用的表空间
+select owner,table_name,tablespace_name from dba_tables where owner='SNP';
+
+
+SELECT tablespace_name FROM dba_tablespaces WHERE contents='UNDO'
+
+--查看临时表空间大小
+select TABLESPACE_NAME,USED_BLOCKS*8192/1024/1024 "MB USED" ,TOTAL_BLOCKS *8192/1024/1024,FREE_BLOCKS*8192/1024/1024 "MB FREE" from v$sort_segment where TABLESPACE_NAME='TEMP';
+
+--sqlplus远程连接数据库服务器
+sqlplus 用户名/密码@IP地址/数据库名称。

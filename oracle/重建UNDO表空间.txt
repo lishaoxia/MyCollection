@@ -1,0 +1,58 @@
+ 
+ UNDO 表空间重建（清理）  
+ 
+
+标签： oracleOracleORACLE数据库  
+
+2012-12-28 17:12 3856人阅读 评论(0) 收藏 举报 
+.
+
+  
+
+ 分类： 
+
+Oracle（40）   
+
+
+ . 
+
+Oracle的AUM(Auto Undo Management)从出生以来就经常出现只扩展,不收缩(shrink)的情况(通常我们可以设置足够的UNDO表空间大小,然后取消其自动扩展属性).
+
+查看表空间使用情况
+
+SELECT   a.tablespace_name,ROUND (a.total_size) "total_size(MB)",ROUND (a.total_size) - ROUND (b.free_size, 3) "used_size(MB)",ROUND (b.free_size, 3) "free_size(MB)",ROUND (b.free_size / total_size * 100, 2) || '%' free_rate  FROM   (  SELECT   tablespace_name, SUM (bytes) / 1024 / 1024 total_size FROM   dba_data_files GROUP BY   tablespace_name) a, (  SELECT   tablespace_name, SUM (bytes) / 1024 / 1024 free_size FROM   dba_free_space GROUP BY   tablespace_name) b WHERE   a.tablespace_name = b.tablespace_name(+);
+
+
+现在我们可以采用如下步骤回收UNDO空间:
+1.确认文件
+select file_name,bytes/1024/1024 from dba_data_files where tablespace_name like 'UNDOTBS1';
+
+2.检查UNDO Segment状态
+select usn,xacts,rssize/1024/1024/1024,hwmsize/1024/1024/1024,shrinks from v$rollstat order by rssize;
+
+3.创建新的UNDO表空间
+SQL> create undo tablespace undotbs3 datafile '/u01/app/oradata/TJ/undotbs301.dbf' size 150M reuse AUTOEXTEND ON;
+
+Tablespace created.
+  
+
+4.切换UNDO表空间为新的UNDO表空间
+SQL> alter system set undo_tablespace=undotbs3;
+
+System altered.
+
+ 
+
+5.等待原UNDO表空间所有UNDO SEGMENT OFFLINE 
+   select usn,xacts,status,rssize/1024/1024/1024,hwmsize/1024/1024/1024,shrinks from v$rollstat order by rssize;
+   
+   6.删除原UNDO表空间
+
+ alter tablespace undotbs1 offline
+  drop tablespace undotbs1 including contents and datafiles;
+
+7.检查空间情况
+
+     日后增加数据文件方法
+
+ALTER TABLESPACE undotbs3 ADD DATAFILE '/u01/app/oradata/TJ/undotbs303.dbf' size 150M reuse AUTOEXTEND ON;

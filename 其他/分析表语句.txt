@@ -1,0 +1,23 @@
+
+
+
+lianghaojun(梁浩军) 16:23:01
+--查询Oracle正在执行的sql语句及执行该语句的用户
+SELECT b.sid oracleID,
+       b.username 登录Oracle用户名,
+       b.serial#,
+       spid 操作系统ID,
+       paddr,
+       sql_text 正在执行的SQL,
+       b.machine 计算机名
+FROM v$process a, v$session b, v$sqlarea c
+WHERE a.addr = b.paddr
+   AND b.sql_hash_value = c.hash_value
+  
+and b.username = 'SNP'
+lianghaojun(梁浩军) 16:23:08
+analyze table MD_ORG compute statistics;
+analyze table SNP_R602 compute statistics;
+analyze table SNP_R602_CHECK_STATE compute statistics;
+analyze table SNP_R602_CHECK_RESULT compute statistics;
+analyze table RP_FORMULA compute statistics;

@@ -1,0 +1,224 @@
+1、安装
+$ wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-4.0.2.tgz
+$ tar -zxvf mongodb-linux-x86_64-rhel70-4.0.2.tgz
+MongoDB 的可执行文件位于 bin 目录下，所以可以将其添加到 PATH 路径中：
+export PATH=<mongodb-install-directory>/bin:$PATH
+
+MongoDB的数据存储在data目录的db目录下，但是这个目录在安装过程不会自动创建，所以你需要手动创建data目录，并在data目录中创建db目录。
+以下实例中我们将data目录创建于根目录下(/)。
+注意：/data/db 是 MongoDB 默认的启动的数据库路径(--dbpath)
+
+2、启动MongoDB服务
+$ ./mongod --dbpath /data/db   #bin目录下,类似于Mysqld/Oracle
+$ ./mongod --shutdown  --dbpath /data/db    #关闭服务
+
+3、MongoDB后台管理  命令行
+$ ./mongo		#类似于mysql/sqlplus
+
+4、show dbs 显示所有数据库列表，发现在列表中没有找到刚才新添加的“lichao”数据库，这是因为至少插入一个文档才会显示。db.student.insert({"姓名":"张三"})
+
+5、db 显示当前数据库对象或集合
+
+6、 use dbname  创建一个数据库，如果数据库存在则使用这个数据库
+$ db local
+
+7、删除数据库
+>use lichao
+switched to db lichao
+> db.dropDatabase()
+{ "dropped" : "lichao", "ok" : 1 }
+
+1、集合操作
+1.1创建集合
+db.createCollection(name, options
+其中，name 是集合名称，是一个字符串；options 是可选项，是一个文档，指定内存大小和索引等选项，具体参数说明如下表
+_______________________________________________________________________________________________________________
+字段			类型				说明
+capped			布尔        	   （可选）如果为 true，表示为固定集合。固定集合是指具有固定存储空间的集合。
+									当该值为 true 时，必须指定 size 参数。
+autoIndexId		布尔			   （可选）如果为 true，在 _id 字段自动创建索引。默认为false。
+									从3.4开始，该选项将被删除。
+size			数值			   （可选）为固定集合指定一个最大值（以字节计）。
+									如果 capped 为 true，也需要指定该字段。
+max				数值			   （可选）为固定集合指定文档的最大数量。
+————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+注：1.如果 collection 达到最大存储限制（size）之前达到最大文档数量（max）会删除旧文档。
+    2.MongoDB 会先检查size值，然后再检查max值
+
+创建一个集合"student"，为字段_id创建索引，最大存储空间是10M，最大文档数量为1000
+>db.createCollection("student",{capped:false,size:10485760,max:1000})
+
+1.2 显示所有集合
+>show collections
+
+1.2 删除集合
+>db.student.drop()
+如果删除成功返回true，否则，返回false
+
+
+2、文档操作
+
+2.1插入文档
+>db.student.insert({"姓名":"宋超","年龄":"28"})
+>db.student.insert({"姓名":"马云","年龄":"48","专业":"英语"})
+>for(var i=0;i<=200000;i++){db.student.insert({"姓名":"李超"+i,"年龄":18,"职业":"测试"})}
+#快速插入20万条记录
+
+2.2更新文档
+MongoDB 用 update() 或者 save() 更新集合中的文档
+
+2.2.1 update()更新已经存在文档的值
+>db.student.update({"姓名":"马云"},{$set:{"专业":"电商"}})
+
+上面范例只会更新第一条发现的文档，若想更新全部发现的文档，则需要用 multi:true ，具体写法如下
+>db.student.update({"姓名":"马云"},{$set:{"专业":"电商"}},{multi:true})
+
+2.2.2、save()
+save() 方法通过传入的文档来替换已有文档。决定是插入一个文档还是更新文档，取决于_id参数。如果能根据_id找到一个已经存在的文档，
+那么就更新。如果没有传入_id参数或者找不到存在的文档，那么就插入一个新文档。
+db.student.save({"_id":ObjectId("5bbc1a6058032218637e4e07"),"姓名":"马云","专业":"英语"})
+#使用save更新，可增删字段
+
+
+2.3删除文档
+db.student.remove({"姓名":"宋超"})	#删除姓名为宋超的记录
+db.student.remove({"姓名":"宋超",1})	#只删除一条姓名为宋超的记录
+db.student.remove({})	#删除所有记录
+
+2.4查询文档
+db.student.find()	#查询指定集合的全部文档
+db.student.find().pretty()	#格式化显示查询结果
+db.student.findOne()	#只返回一个文档
+db.student.find({"姓名":"宋超"})	#查询姓名为宋超的记录
+db.student.find({"年龄":{$gt:30}}).pretty()		#查询年龄大于30的记录
+db.student.find({"姓名":"李超190000"}).explain("executionStats")	#分析查询语句，executionTimeMillis值，指的是我们这条语句的执行时间
+
+2.4.1 MongoDB 中的 and 条件
+MongoDB 的 find() 方法可以传入多个键(key)，每个键(key)以逗号隔开，MongoDB 会把这些键作为 and 条件
+db.student.find({"姓名":"宋超","专业":"测试"})	#姓名为宋超AND专业为测试
+
+2.4.2 MongoDB 中的 or 条件
+MongoDB 中 or 条件用 $or关键字
+db.collection.find(
+   {
+      $or: [
+         {key1: value1}, {key2:value2}
+      ]
+   }
+).pretty()
+
+2.4.3 MongoDB 中 and 和 or 结合使用
+db.student.find({"年龄":{$gt:30}},{$or:[{"姓名":"宋超"},{"姓名":"王健林"}]})
+#年龄大于30且姓名为宋超或王健林的记录
+
+2.4.4 映射
+MongoDB 中限制字段的显示，可以利用 0 或 1 来设置字段列表。1 用于显示字段，0 用于隐藏字段。
+>db.student.find({},{"姓名":1,"_id":0})	#仅显示姓名列
+我们发现不设置 "_id":1 结果中也会返回 _id 字段，这是因为在执行 find() 方法时，_id 字段是一直显示的。
+如果不想显示该字段，则可以设置 "_id":0。
+
+2.4.5 限制记录
+db.student.find().limit(2)	#只显示前两条记录
+
+3、索引
+3.1 添加索引
+>db.student.ensureIndex({"姓名":1})	#1 表示按升序排列字段值。-1 表示按降序排列。
+
+3.2 添加索引，并制定索引名
+>db.student.ensureIndex({"姓名":-1},{name:"index_name_desc"})
+
+3.3 查看索引
+>db.student.getIndexes()
+
+3.4 唯一索引
+>db.student.ensureIndex({"姓名":1},{unique:true})
+
+3.5 复合索引
+>db.student.ensureIndex({"姓名":1},{"年龄":1})
+
+3.6 删除索引
+>db.student.dropIndex("姓名_1")		#根据索引名称删除索引
+>db.student.dropIndex({"姓名":1})	#根据索引文档删除索引
+>db.student.dropIndexes()			#删除集合中的所有索引
+>>db.student.find({"姓名":"李超190000"}).hint({"姓名":1}).explain("executionStats")	#hint()强制使用指定的索引查询，explain分析 
+
+
+4、聚合(aggregate)
+聚合管道是 MongoDB 2.2版本引入的新功能。它由阶段（Stage）组成，文档在一个阶段处理完毕后，聚合管道会把处理结果传到下一个阶段。
+
+4.1 阶段操作符
+
+4.1.1 $project 		#筛选所需字段，也可增加字段到结果集
+>db.fruit.aggregate([{$project:{_id:0,Kind:1,Price:1}}])	#只查出Kind和Price字段
+
+> db.fruit.aggregate([{$project:{_id:0,Kind:1,Price:{$add:["$Price",5]}}}])		
+#只查出Kind和Price字段，且价格都增加5
+
+4.1.2 $match	#用于过滤文档,用法类似于 find() 方法中的参数。
+> db.fruit.aggregate([{$match:{"Price":{$gte:10}}}])	#价格大于等于10的记录
+#$match 尽量出现在管道的最前面，过滤出需要的数据，在后续的阶段中可以提高效率。
+
+4.1.3 $group 	#分组
+> db.fruit.aggregate(
+	[
+		{$match:{"Price":{$lte:10}}},
+		{$group:{"_id":"$Name","num_kind":{$sum:1}}}
+	]
+	)
+#查出价格小于等于10的记录，并按Name分组，求和每组的种类
+
+4.1.4 $sort		#排序
+>db.fruit.aggregate([{$sort:{"Price":1}}])#按价格升序排序
+>db.fruit.aggregate([{$sort:{"Price":-1}}])#按价格降序排序
+
+4.1.5 $limit 	#限制返回文档数量
+>db.fruit.aggregate([{$limit: 2}]) 	#只返回前两条记录
+
+4.1.6 $skip 	#跳过记录，输出剩下的文档
+db.fruit.aggregate([{$skip: 2}])	#跳过前两条记录
+
+4.1.7 $unwind	#将文档中数组类型的字段拆分成多条，每条文档包含数组中的一个值。
+>db.article.aggregate(
+    [
+         {
+              $match: {"title": "MongoDB Aggregate"}
+         },
+         {
+              $unwind: "$tags"
+         }
+    ]
+   )
+
+   
+4.2 表达式操作符
+4.2.1 布尔管道聚合操作 $and $or $not
+db.mycol.aggregate(
+   [
+     {
+       $project:
+          {
+            item: 1,
+            result: { $or: [ { $gt: [ "$qty", 250 ] }, { $lt: [ "$qty", 200 ] } ] }
+          }
+     }
+   ]
+)
+#结果集包含三个字段:_id,item,result,若qty大于250或小于200，result的值为true，否则为false
+   
+........................更多聚合查看：http://www.cnblogs.com/liruihuan/p/6686570.html...........................
+   
+4.3 单目的聚合
+>db.fruit.count({"Price":{$gt:10}}) #对价格大于10的记录计数
+>db.fruit.distinct("Name")		#对Name去重查询
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   

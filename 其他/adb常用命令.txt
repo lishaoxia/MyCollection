@@ -1,0 +1,78 @@
+--获取设备列表及设备状态
+adb devices
+
+--列出所有的应用的包名
+adb shell pm list package
+adb shell pm list package woniu (可以过滤查询包含蜗牛的包名)
+adb shell pm list packages -s	（只输出系统的包）
+adb shell pm list packages -3   （输出所有第三方包）
+
+--给设备进行软件的安装，8a99d36c是设备序列号，可通过adb devices 获得
+adb -s 8a99d36c install  D://woniuhuoche3.1.0.apk
+
+--卸载设备中已经安装的软件
+adb -s  8a99d36c uninstall com.guangan.woniu（包名）
+
+--adb抓取某个app错误日志
+adb logcat > d:\1.log
+adb logcat *:E | findstr "com.guangan.woniu" > C:\Users\Administrator\Desktop\2.log
+
+--清除日志
+adb logcat -c
+
+--将数据从设备复制到PC中
+adb pull /sdcard/woniuhuoche3.1.1.apk  d:\
+
+--将数据从PC端复制到设备中
+adb push d:\woniuhuoche3.1.1.apk  /sdcard/
+
+--列出指定应用的 dump 信息
+adb shell pm dump 包名
+
+--查看当前终端中的进程信息
+adb shell ps
+adb shell ps | grep com.package.name (linux)
+adb shell ps | find com.package.name (windows)
+
+--截屏
+adb shell screencap -p /sdcard/screen.png 
+
+--录屏，执行命令后操作手机，ctrl + c 结束录制，录制结果保存至 sdcard
+adb shell screenrecord sdcard/record.mp4
+
+--结束 adb 服务， 启动 adb 服务，通常两个命令一起用，设备状态异常时使用 kill-server，然后运行 start-server 进行重启服务
+adb kill-server , adb start-server , 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

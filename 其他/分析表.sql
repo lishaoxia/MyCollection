@@ -1,0 +1,17 @@
+analyze table MD_ORG compute statistics;
+analyze table SNP_R601 compute statistics;
+analyze table SNP_R601_CHECK_STATE compute statistics;
+analyze table SNP_R601_CHECK_RESULT compute statistics;
+analyze table SNP_R602 compute statistics;
+analyze table SNP_R602_CHECK_STATE compute statistics;
+analyze table SNP_R602_CHECK_RESULT compute statistics;
+analyze table SNP_R603 compute statistics;
+analyze table SNP_R603_CHECK_STATE compute statistics;
+analyze table SNP_R603_CHECK_RESULT compute statistics;
+analyze table SNP_R604 compute statistics;
+analyze table SNP_R604_CHECK_STATE compute statistics;
+analyze table SNP_R604_CHECK_RESULT compute statistics;
+analyze table SNP_R605 compute statistics;
+analyze table SNP_R605_CHECK_STATE compute statistics;
+analyze table SNP_R605_CHECK_RESULT compute statistics;
+analyze table RP_FORMULA compute statistics;

@@ -1,0 +1,217 @@
+1.查看scott用户的默认表空间、临时表空间
+select username,default_tablespace,temporary_tablespace
+from dba_users
+where username = 'SCOTT';
+
+2.查看scott用户的系统权限
+select username,privilege,admin_option 
+from user_sys_privs 
+where username = 'SCOTT';
+
+3.查看赋予scott用户的对象权限
+select grantee,owner, table_name, t.grantor, t.privilege, t.grantable, t.hierarchy
+from dba_tab_privs t
+where t.grantee = 'SCOTT' ;
+
+GRANTEE     OWNER     TABLE_NAME     GRANTOR     PRIVILEGE     GRANTABLE     HIERARCHY
+  SCOTT         SYS          DUMP_DIR          SYS            WRITE             NO                  NO
+  SCOTT         SYS          DUMP_DIR          SYS            READ               NO                  NO
+这里主要是赋予了scott用户对目录dump_dir的读写权限
+查询 dba_tab_privs就是查询赋予这个用户(角色)的对象权限
+
+用下面这种方式查询获取不到结果
+select *
+from user_tab_privs t
+
+没有记录
+
+但是执行下面命令后
+grant select on emp to sys；
+
+select *
+from user_tab_privs t
+
+GRANTEE     OWNER     TABLE_NAME     GRANTOR     PRIVILEGE     GRANTABLE     HIERARCHY
+SYS     SCOTT     EMP     SCOTT     SELECT     NO     NO
+
+可以得到结论，这个视图查询的只是通过这个用户自己赋予出去的对象权限，而不是别人赋予他的，注意跟dba_tab_privs的差别
+
+4.查看授予了scott的角色权限
+select t.grantee,t.granted_role, t.admin_option, t.default_role
+from dba_role_privs t
+where t.grantee = 'SCOTT';
+
+GRANTEE     GRANTED_ROLE     ADMIN_OPTION     DEFAULT_ROLE
+  SCOTT         RESOURCE                  NO                        YES
+  SCOTT         CONNECT                    NO                        YES
+
+或者
+select *
+from user_role_privs t
+
+USERNAME     GRANTED_ROLE     ADMIN_OPTION     DEFAULT_ROLE     OS_GRANTED
+SCOTT              CONNECT               NO                        YES                     NO
+SCOTT             RESOURCE              NO                        YES                     NO
+
+这里授予了scott用户resource、connect角色拥有的权限，并且不能将这些权限赋给其他人
+
+5.查看scott用户使用了哪些表空间
+select t.table_name, t.tablespace_name
+from  dba_all_tables t
+where t.owner = 'SCOTT' ;
+
+TABLE_NAME                                   TABLESPACE_NAME
+    DEPT                                                  USERS
+    EMP                                                   USERS
+    BONUS                                               USERS
+    SALGRADE                                          USERS
+    TEST                                                  USERS
+SYS_EXPORT_SCHEMA_01                    TEST_TBS    
+这个是由scott用户用expdp从源端数据库导出数据时的job_name，dba_all_tables查出的是跟用户的对象以及相关对象，文档是这么说的：
+
+1.DBA_ALL_TABLES describes all object tables and relational tables in the database.
+   Its columns are the same as those in ALL_ALL_TABLES.
+
+2.ALL_ALL_TABLES describes the object tables and relational tables accessible to the current user.
+
+3.USER_ALL_TABLES describes the object tables and relational tables owned by the current user.
+Its columns (except for OWNER) are the same as those in ALL_ALL_TABLES.
+
+在CU上看到一个很好的例子(感谢ID为棉花糖ONE的这位朋友)
+@>conn / as sysdba
+Connected.
+SYS@oracle10>create or replace type k as object(id number);
+  2  /
+
+Type created.
+
+SYS@oracle10>create table t of k;
+
+Table created.
+
+SYS@oracle10>select table_name from dba_tables where table_name = 'T';
+
+no rows selected
+
+SYS@oracle10>select table_name from dba_all_tables where table_name = 'T';
+
+TABLE_NAME
+------------------------------
+T
+
+或者
+select table_name, tablespace_name 
+from user_tables;
+TABLE_NAME     TABLESPACE_NAME
+DEPT                        USERS
+EMP                         USERS
+BONUS                    USERS
+SALGRADE               USERS
+
+6.查看当前用户拥有的权限
+select t.privilege
+from session_privs t
+
+因为我当前用户是scott，所有查询结果如下
+PRIVILEGE
+CREATE SESSION
+UNLIMITED TABLESPACE
+CREATE TABLE
+CREATE CLUSTER
+CREATE SEQUENCE
+CREATE PROCEDURE
+CREATE TRIGGER
+CREATE TYPE
+CREATE OPERATOR
+CREATE INDEXTYPE
+
+7.查看角色(resource)权限的系统权限
+select *
+from role_sys_privs t1
+where t1.role = 'RESOURCE'
+
+   ROLE               PRIVILEGE          ADMIN_OPTION
+RESOURCE     CREATE TRIGGER           NO
+RESOURCE     CREATE SEQUENCE        NO
+RESOURCE     CREATE TYPE                NO
+RESOURCE     CREATE PROCEDURE      NO
+RESOURCE     CREATE CLUSTER          NO
+RESOURCE     CREATE OPERATOR       NO
+RESOURCE     CREATE INDEXTYPE       NO
+RESOURCE     CREATE TABLE              NO
+
+8.查看角色(DBA)被赋予的角色权限
+select *
+from role_role_privs t
+where t.role = 'DBA'
+  
+ROLE      GRANTED_ROLE               ADMIN_OPTION
+DBA     SCHEDULER_ADMIN                    YES
+DBA     OLAP_DBA                                  NO
+DBA     EXECUTE_CATALOG_ROLE          YES
+DBA     DELETE_CATALOG_ROLE             YES
+DBA     SELECT_CATALOG_ROLE              YES
+DBA     EXP_FULL_DATABASE                   NO
+DBA     WM_ADMIN_ROLE                        NO
+DBA     GATHER_SYSTEM_STATISTICS     NO
+DBA     JAVA_DEPLOY                              NO
+DBA     JAVA_ADMIN                               NO
+DBA     IMP_FULL_DATABASE                  NO
+DBA     XDBADMIN                                 NO
+DBA     XDBWEBSERVICES                      NO
+
+9.查看角色(DBA)被赋予的对象权限
+select *
+from role_tab_privs t1
+where t1.role = 'DBA'
+
+ROLE     OWNER     TABLE_NAME     COLUMN_NAME     PRIVILEGE     GRANTABLE
+DBA     SYS     AW$                                                       SELECT     NO
+DBA     SYS     MAP_OBJECT                                           INSERT     NO
+DBA     SYS     DBMS_LOGSTDBY                                     EXECUTE     NO
+DBA     SYS     DBMS_SERVER_ALERT                              EXECUTE     NO
+DBA     SYS     DBMS_DEFER_SYS                                    EXECUTE     NO
+DBA     SYS     DBMS_RESUMABLE                                    EXECUTE     NO
+DBA     SYS     PS$                                                           DEBUG     NO
+DBA     SYS     AWSEQ$          SELECT     NO
+DBA     SYS     AW_PROP$          DEBUG     NO
+DBA     SYS     MAP_OBJECT          ON COMMIT REFRESH     NO
+DBA     SYS     MAP_OBJECT          UPDATE     NO
+DBA     SYS     MAP_OBJECT          SELECT     NO
+DBA     SYS     MAP_OBJECT          DELETE     NO
+DBA     SYS     DBMS_SERVER_TRACE          EXECUTE     NO
+DBA     SYS     LOAD_UNDO_STAT          EXECUTE     NO
+DBA     SYS     DBMS_FEATURE_USAGE_REPORT          EXECUTE     NO
+DBA     SYS     AW_PROP$          SELECT     NO
+DBA     SYS     OUTLN_PKG          EXECUTE     NO
+DBA     SYS     DBMS_MONITOR          EXECUTE     NO
+DBA     SYS     AW$          DEBUG     NO
+DBA     SYS     AW_OBJ$          DEBUG     NO
+DBA     SYS     AW_OBJ$          SELECT     NO
+DBA     SYS     MAP_OBJECT          ALTER     NO
+DBA     SYS     DBMS_TDB          EXECUTE     NO
+DBA     SYS     OUTLN_EDIT_PKG          EXECUTE     NO
+DBA     SYS     RESET_UNDO_STAT          EXECUTE     NO
+DBA     SYS     PS$          SELECT     NO
+DBA     SYS     DBMS_STORAGE_MAP          EXECUTE     NO
+DBA     SYS     DBMS_WORKLOAD_REPOSITORY          EXECUTE     NO
+DBA     SYS     AWSEQ$          ALTER     NO
+DBA     SYS     DBMS_SERVICE          EXECUTE     NO
+DBA     SYS     DBMS_UADV_ARR          EXECUTE     NO
+DBA     SYS     MAP_OBJECT          QUERY REWRITE     NO
+DBA     SYS     DBMS_DEFER_QUERY          EXECUTE     NO
+DBA     SYS     DBMS_WORKLOAD_CAPTURE          EXECUTE     NO
+DBA     SYS     MAP_OBJECT          FLASHBACK     NO
+DBA     SYS     MAP_OBJECT          DEBUG     NO
+DBA     SYS     DBMS_FLASHBACK          EXECUTE     NO
+DBA     SYS     DBMS_UNDO_ADV          EXECUTE     NO
+
+
+10.查看赋给用户(GDYXHD)对对象操作的一些权限
+select *
+from  table_privileges t1
+where t1.grantee = 'GDYXHD'
+GRANTEE     OWNER     TABLE_NAME     GRANTOR     SELECT_PRIV     INSERT_PRIV     DELETE_PRIV     UPDATE_PRIV     REFERENCES_PRIV     ALTER_PRIV     INDEX_PRIV     CREATED
+GDYXHD     SYS     DUMP_FILE_DIR     SYS     N     N     N     N     N     N     N     
+
+上面的 DUMP_FILE_DIR是一个目录对象

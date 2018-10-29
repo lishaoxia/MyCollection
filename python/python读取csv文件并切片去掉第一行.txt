@@ -1,0 +1,5 @@
+users = csv.reader(open(user_data.csv,'r'))	#打开csv文件，提取数据给users
+#1、islice(data,m,n) 切片，取第m行到第n-1行数据，m从0开始，n=None时，取m行及以后的数据 
+#2、for 定义了5个变量，分别对应csv文件里的5列表数据
+for (username,passwd1,passwd2,email,sex) in islice(users,1,None):
+    print(username,passwd1,passwd2,email,sex)

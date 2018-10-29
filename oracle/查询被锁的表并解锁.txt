@@ -1,0 +1,12 @@
+--锁表查询SQL
+SELECT object_name, machine, s.sid, s.serial# 
+FROM gv$locked_object l, dba_objects o, gv$session s 
+WHERE l.object_id　= o.object_id 
+AND l.session_id = s.sid; 
+
+找到被锁定的表，解锁 
+代码如下:
+
+--释放SESSION SQL: 
+--alter system kill session 'sid, serial#'; 
+ALTER system kill session '23, 1647'; 

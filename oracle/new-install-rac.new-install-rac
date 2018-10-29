@@ -1,0 +1,298 @@
+           安装 rac 的准备环境 
+
+
+一  系统和存储准备 
+    在所有节点操作 
+
+先清除防火墙所有规则 然后保存
+ iptables -F
+ iptables -F -t raw
+ iptables -F -t mangle
+ iptables -F -t nat
+ service iptables save
+ service iptables stop
+ chkconfig iptables off
+ 
+
+关闭selinux  
+
+vi  /etc/selinux/config
+
+SELINUX=disabled
+
+临时关闭selinux  
+
+[root@rac2 ~]# setenforce  0   
+
+1） root@rac4 ~]# yum -y install isc*
+
+2）[root@rac4 ~]# iscsiadm  -m discovery -t st -p 12.10.10.9
+正在启动 iscsid：                                          [确定]
+iscsiadm: No portals found
+[root@rac4 ~]# 
+
+　　
+３）　登陆存储
+
+　　iscsiadm  -m node -L all
+
+４）　开机自动启动
+
+chkconfig  iscsid on 
+
+chkconfig  iscsi  on
+                                                                                    一  修改/etc/hosts 
+
+
+
+
+二 在所有节点 创建oracle 和 grid 用户  
+     root@rac1 ~]# userdel  -r   oracle
+    [root@rac1 ~]# groupdel  dba
+    [root@rac1 ~]# groupdel  oinstall
+
+groupadd -g 1000 oinstall 
+groupadd -g 1200 asmadmin 
+groupadd -g 1201 asmdba 
+groupadd -g 1202 asmoper 
+groupadd -g 1300 dba 
+groupadd -g 1301 oper 
+useradd -m -u 1100 -g oinstall -G asmadmin,asmdba,asmoper,dba -d /home/grid -s /bin/bash grid 
+useradd -m -u 1101 -g oinstall -G dba,oper,asmdba -d /home/oracle -s /bin/bash oracle 
+
+
+    -将用户grid 添加到dba 组： 
+
+     [root@rac1 app]# gpasswd -a grid dba 
+
+     修改grid 用户 和oracle 用户的密码 
+
+     [root@rac1 ~]# passwd  oracle    rac1 和 rac2 grid   用户的密码必须相同
+     [root@rac1 ~]# passwd  grid      rac1 和 rac2 oracle 用户的密码必须相同
+
+
+
+三 创建目录
+     创建目录结构（所有节点）
+
+mkdir -p /oracle/app/grid/11.2.0 
+mkdir -p /oracle/grid 
+chown -R grid:oinstall /oracle 
+mkdir -p /oracle/app/oracle/11.2.0/db_1 
+chown -R oracle:oinstall /oracle/app/oracle 
+chmod -R 775 /oracle
+
+四  修改用户的环境变量
+
+
+    
+  配置环境变量 （所有节点）　
+
+   Grid 用户 
+
+  修改grid 用户的.bash_profile. 注意每个节点的不同内容： 
+
+export ORACLE_SID=+ASM1 
+#export ORACLE_SID=+ASM2 
+export ORACLE_BASE=/oracle/grid
+export ORACLE_HOME=/oracle/app/grid/11.2.0
+export PATH=$PATH:/HOME/bin:/$ORACLE_HOME/bin
+
+
+　修改oracle 用户的.bash_profile 
+export ORACLE_SID=student1
+export ORACLE_BASE=/oracle/app/oracle
+export ORACLE_HOME=/oracle/app/oracle/11.2.0/db_1
+export PATH=$PATH:$HOME/bin$ORACLE_HOME/bin
+
+
+
+五 udev 绑定共享存储 
+
+    比如 在rac1 节点运行
+for i in b c d e f g h i;   
+do
+echo "KERNEL==\"sd*\", BUS==\"scsi\", PROGRAM==\"/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/\$name\", RESULT==\"`/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/sd$i`\", NAME=\"asm-disk$i\", OWNER=\"grid\", GROUP=\"asmadmin\", MODE=\"0660\""      
+done
+
+
+   内容大致如下 
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c455236376d636e562d3238316d2d4c4b4c78", NAME="asm-diskb", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c455236376d636e562d3238316d2d4c4b4c78", NAME="asm-diskc", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c455275676b7562342d6b435a642d4a4a4d62", NAME="asm-diskd", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c45524748326b617a2d324b42432d68493858", NAME="asm-diske", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c45523979526a49672d547669592d54323677", NAME="asm-diskf", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c4552495a69676e422d524134772d6b594c69", NAME="asm-diskg", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c45527634504d306a2d41387a722d41463736", NAME="asm-diskh", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c45524259426131542d4f3849442d61735273", NAME="asm-diski", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c4552386e4833424a2d74626e542d33377649", NAME="asm-diskj", OWNER="grid", GROUP="asmadmin", MODE="0660"
+KERNEL=="sd*", BUS=="scsi", PROGRAM=="/sbin/scsi_id --whitelisted --replace-whitespace --device=/dev/$name", RESULT=="14f504e46494c45523273633875412d783952772d4857446d", NAME="asm-diskk", OWNER="grid", GROUP="asmadmin", MODE="0660"
+
+[root@rac2 rules.d]# cd  /etc/udev/rules.d    
+vi oracle.rules  
+
+把上面的内容粘贴进去
+
+
+  检测udev 是否成功 
+[root@rac2 rules.d]# start_udev  
+正在启动 udev：                                            [确定]
+[root@rac2 rules.d]# ll /dev/asm*
+brw-rw----. 1 grid asmadmin 8,  16 7月  28 14:02 /dev/asm-diskb
+brw-rw----. 1 grid asmadmin 8,  32 7月  28 14:02 /dev/asm-diskc
+brw-rw----. 1 grid asmadmin 8,  48 7月  28 14:02 /dev/asm-diskd
+brw-rw----. 1 grid asmadmin 8,  64 7月  28 14:02 /dev/asm-diske
+brw-rw----. 1 grid asmadmin 8,  80 7月  28 14:02 /dev/asm-diskf
+brw-rw----. 1 grid asmadmin 8,  96 7月  28 14:02 /dev/asm-diskg
+brw-rw----. 1 grid asmadmin 8, 112 7月  28 14:02 /dev/asm-diskh
+brw-rw----. 1 grid asmadmin 8, 128 7月  28 14:02 /dev/asm-diski
+
+
+   把oracle.rules 文件拷贝到其他节点 （该环境中rac1 的ip 是172.16.150.110)
+
+    [root@rac2 rules.d]# scp  oracle.rules  172.16.150.110:/etc/udev/rules.d/
+
+
+    在rac1 检测 udev 是否成功 
+
+   [root@rac1 ~]# start_udev  
+   正在启动 udev：
+
+
+[root@rac1 rules.d]# ll /dev/asm*
+brw-rw----. 1 grid asmadmin 8,  16 7月  28 14:02 /dev/asm-diskb
+brw-rw----. 1 grid asmadmin 8,  32 7月  28 14:02 /dev/asm-diskc
+brw-rw----. 1 grid asmadmin 8,  48 7月  28 14:02 /dev/asm-diskd
+brw-rw----. 1 grid asmadmin 8,  64 7月  28 14:02 /dev/asm-diske
+brw-rw----. 1 grid asmadmin 8,  80 7月  28 14:02 /dev/asm-diskf
+brw-rw----. 1 grid asmadmin 8,  96 7月  28 14:02 /dev/asm-diskg
+brw-rw----. 1 grid asmadmin 8, 112 7月  28 14:02 /dev/asm-diskh
+brw-rw----. 1 grid asmadmin 8, 128 7月  28 14:02 /dev/asm-diski
+
+
+
+六 系统环境和一些参数的设置 
+
+  6.1) 关闭ntpd 服务 （在所有节点操作) 
+
+     [root@rac1 ~]# /sbin/service ntpd stop 
+
+                      Shutting down ntpd:                                         [  OK  ] 
+
+      [root@rac1 ~]# chkconfig ntpd off 
+
+      [root@rac1 ~]# mv /etc/ntp.conf /etc/ntp.conf.original 
+
+      [root@rac1 ~]# chkconfig ntpd --list 
+
+      ntpd            0:off   1:off   2:off   3:off    4:off   5:off   6:off 
+
+      [root@rac2 ~]# /sbin/service ntpd stop 
+
+                     Shutting down ntpd:                                         [  OK  ] 
+
+      [root@rac2 ~]# chkconfig ntpd off 
+
+      [root@rac2 ~]# mv /etc/ntp.conf /etc/ntp.conf.original 
+
+      [root@rac2 ~]# chkconfig ntpd --list 
+
+       ntpd            0:off   1:off   2:off   3:off    4:off   5:off   6:off 
+
+       还要删除以下文件： 
+
+       rm /var/run/ntpd.pid 
+
+       此文件保存了 NTP         后台程序的 pid。 
+
+  6.2) 限制文件链接数  （在所有节点) 
+
+[root@rac1 ~]# cat >> /etc/security/limits.conf <<EOF 
+
+grid soft nproc 2047 
+
+grid hard nproc 16384 
+
+grid soft nofile 1024 
+
+grid hard nofile 65536 
+
+oracle soft nproc 2047 
+
+oracle hard nproc 16384 
+
+oracle soft nofile 1024 
+
+oracle hard nofile 65536 
+EOF
+
+
+
+  6.3)　修改/etc/sysctl.conf 　　（在所有节点） 
+
+vi /etc/sysctl.conf
+
+kernel.shmmax = 4294967295 
+kernel.shmall = 2097152 
+kernel.shmmni = 4096 
+kernel.sem = 250 32000 100 128 
+fs.file-max = 6815744 
+net.ipv4.ip_local_port_range = 9000 65500 
+net.core.rmem_default=262144 
+net.core.rmem_max=4194304 
+net.core.wmem_default=262144 
+net.core.wmem_max=1048576 
+fs.aio-max-nr=1048576 
+
+
+[root@rac rules.d]# sysctl -p
+
+
+   6.4)在所有节点运行
+
+[root@rac1 ~]#cat >> /etc/pam.d/login <<EOF 
+session        required         pam_limits.so 
+EOF
+
+   6.5） 在所有节点运行
+
+
+    [root@rac1 ~]#  cat >> /etc/profile <<EOF
+
+if [ /$USER = "oracle" ] || [ /$USER = "grid" ]; then 
+
+         if [ /$SHELL = "/bin/ksh" ]; then 
+
+                 ulimit -p 16384 
+
+                 ulimit -n 65536 
+
+        else 
+
+                 ulimit -u 16384 -n 65536 
+
+        fi 
+
+        umask 022 
+
+fi 
+EOF
+
+
+
+172.16.150.49 rac1 rac1-public 
+
+182.16.182.9 rac1-priv 
+
+172.16.150.43 rac1-vip 
+
+172.16.150.50 rac2 rac2-public 
+
+182.16.182.10 rac2-priv 
+
+172.16.150.46 rac2-vip 
+
+172.16.150.44 rac-scan
+
+
+

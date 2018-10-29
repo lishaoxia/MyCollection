@@ -1,0 +1,45 @@
+oracle集群如何建集群表空间，建数据文件
+福州吧壹母FG4 | 浏览 796 次  2014-10-27 14:49
+2014-10-27 15:02 最佳答案
+查询数据库版本信息：
+SQL> select * from v$version;
+BANNER
+--------------------------------------------------------------------------------
+Oracle Database 11g Enterprise Edition Release 11.2.0.3.0 - 64bit Production
+PL/SQL Release 11.2.0.3.0 - Production
+CORE 11.2.0.3.0 Production
+TNS for Linux: Version 11.2.0.3.0 - Production
+NLSRTL Version 11.2.0.3.0 - Production
+查询数据库ASM磁盘组信息：
+SQL> select name,total_mb,free_mb from v$asm_diskgroup;
+NAME     TOTAL_MB    FREE_MB
+------------------------------ ---------- ----------
+DATA         5120 3292
+VCR         5120 3732
+ 
+当前数据库已有表空间信息：
+ 
+SQL> select tablespace_name,file_name,bytes/1024/1024/1024 gb from dba_data_files;
+TABLESPACE_NAME         FILE_NAME             GB
+------------------------------ ------------------------------------------------------- ----------
+USERS          +DATA/db/datafile/users.259.858757167         .004882813
+UNDOTBS1         +DATA/db/datafile/undotbs1.258.858757167     .078125
+SYSAUX          +DATA/db/datafile/sysaux.257.858757165    .5859375
+SYSTEM          +DATA/db/datafile/system.256.858757165         .693359375
+UNDOTBS2         +DATA/db/datafile/undotbs2.264.858757691         .048828125
+ 
+创建表空间文件：
+SQL> create tablespace ecif_test_data datafile '+DATA/db/datafile/snp01.dbf' size 10m ....;
+Tablespace created.
+ 
+验证表空间创建是否成功
+SQL>  select tablespace_name,file_name,bytes/1024/1024/1024 gb from dba_data_files;
+TABLESPACE_NAME         FILE_NAME             GB
+------------------------------ ------------------------------------------------------- ----------
+USERS          +DATA/db/datafile/users.259.858757167         .004882813
+UNDOTBS1         +DATA/db/datafile/undotbs1.258.858757167     .078125
+SYSAUX          +DATA/db/datafile/sysaux.257.858757165    .5859375
+SYSTEM          +DATA/db/datafile/system.256.858757165         .693359375
+UNDOTBS2         +DATA/db/datafile/undotbs2.264.858757691         .048828125
+ECIF_TEST_DATA         +DATA/db/datafile/ecif_test_data.268.862066777        .000976563
+6 rows selected.

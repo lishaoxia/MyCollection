@@ -1,0 +1,32 @@
+linux下nohup日志输出过大问题解决方案
+标签： linuxnohup
+2016-06-14 16:40 9690人阅读 评论(0) 收藏 举报
+ 分类： Linux（6）   Shell（4）  
+版权声明：本文为博主原创文章，未经博主允许不得转载,欢迎大家互相交流讨论
+   最近在一Hadoop测试集群运行一个Spark streaming程序，然后使用nohup ./execute.sh & 执行让程序后台运行，才几天日志就上G了，如果有问题想要查看日志，显然打开文件是一件很麻烦的事，于是我想办法通过减小文件大小：
+  1、nohup命令解释：
+  a、语法：nohup [command] [args] [&]
+  b、说明：nohup 命令运行由 Command 参数和任何相关的 Arg 参数指定的命令，忽略所有挂断信号。在注销后使用 nohup 命令运行后台中的程序。要运行后台中的 nohup 命令，添加 & （ 表示“and”的符号）到命令的尾部，如果不指定重定向，则日志默认输出到当前目录下nohup.out文件中，
+  一般提交如 ：nohup ./execute.sh &  这样日志或输出当前运行目下.nohup.out中
+  重定向： nohup ./execute.sh >  /home/xxx/log.log 2>&1 & :这样日志会重定向到指定目录下
+ 2 、切分nohup.out，同时不让它无限增长
+ 我这里用的一般提交命令：nohup ./execute.sh &，这样在当前目录就有nohup.out文件了，这时候可以想办法定时将nohup.out切分成，多个小文件，但同时又要使nohup.out不会无限增长下去(一般情况下是程序不能中断的)：
+    a、每天(根据需要设置时间)，定时切分前一天的日志，(比如每天大概1g，那么可以么次切分100m左右),
+    b、切分完后将nohup.out文件情况，保证新的输出日志会不停的继续输出到nohup.out
+  以上在shell中
+  current_date=`date -d "-1 day" "+%Y%m%d"`
+   split  -b 65535000 -d -a 4  nohup.out  ./log/log_${current_date}_   这里使用split命令，将nouhup文件按指定大小切分(65535000b 大概60多M吧，可以自定义大小 )，并分成指定格式（-d -a 4以4位数字形式为后缀以从0000开始,具体可以百度split命令用法）,最终输出格式为log_20160610_0001
+  cat /dev/null > nohup.out  (该命令会瞬间清空nohup.out文件，后续会继续写该文件）,将日志定向到/dev/null中
+使用重定向输出一样可以这样，只不过换成重定向的文件名即可
+将这些命令定义在一个shell文件每天定时运行即可，这样每天日志会被分成若干份，排查也方便，而且如果日志积压过大的话。可以定时删除历史的日志，保留近几天即可
+整体代码如下：
+[plain] view plain copy
+this_path=$(cd `dirname $0`;pwd)  
+  
+cd $this_path  
+echo $this_path  
+current_date=`date -d "-1 day" "+%Y%m%d"`  
+echo $current_date  
+split -b 65535000 -d -a 4 /home/.../nohup.out   /home/.../log/log_${current_date}_  
+  
+cat /dev/null > nohup.out  

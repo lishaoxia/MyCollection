@@ -1,0 +1,51 @@
+调整Oracle sga的大小导致 ORA-00851和ORA-00844错误
+
+[日期：2014-07-17]	来源：Linux社区  作者：wjx515628	[字体：大 中 小]
+
+
+ 
+今天调整了下Oracle sga的大小，结果重启数据库的时候报如下错误。
+ SQL>alter system set sga_max_size=1024M scope=spfile;
+ SQL> shutdown immediate
+ SQL> startup
+ ORA-00844: Parameter not taking MEMORY_TARGET into account
+ ORA-00851: SGA_MAX_SIZE 1073741824 cannot be set to more than MEMORY_TARGET 784334848.
+ 在Oracle查了下，原来11g新增了个参数MEMORY_TARGET，其大小等于PGA+SGA，当sga的大小大于MEMORY_TARGET就会报如上错误。
+ 
+
+解决方法：
+ 可以直接修改spflie文件中MEMORY_TARGET的大小，可是由于之前没查看spfile的位置，不知道spfile的具体位置，所以只能采用如下方法
+ 1.sqlplus  / as sysdba
+ SQL>create pfile='/home/oracle/pfile' from spfile; 
+ 创建pfile文件，修改pfile文件中的MEMORY_TARGET参数，
+ 然后重新创建spfile文件 
+ SQL>create spfile from pfile='/home/oracle/pfile';
+ 
+
+重启结果又报下面的错
+ SQL> startup
+ ORA-00845: MEMORY_TARGET not supported on this system
+ 这个是由于系统tmpfs小于MEMORY_TARGET导致的，需要调整tmpfs的大小
+ vi /etc/fstab
+ tmpfs                  /dev/shm                tmpfs  defaults,size=2G      0 0
+ 修改size的大小
+ 重新挂载
+ mount -o remount /dev/shm
+ 验证下
+ df -h
+ 
+
+现在终于可以正常启动数据库了
+ SQL> startup
+ ORACLE instance started.
+ 
+
+Total System Global Area 1068937216 bytes
+ Fixed Size                  2220200 bytes
+ Variable Size            943722328 bytes
+ Database Buffers          117440512 bytes
+ Redo Buffers                5554176 bytes
+ Database mounted.
+ Database opened.
+
+总结一下，以后调整sga的顺序是，先调整tmpfs的大小，再调整MEMORY_TARGET 的大小，最后调整sga，保证tmpfs>MEMORY_TARGET >sga+pga

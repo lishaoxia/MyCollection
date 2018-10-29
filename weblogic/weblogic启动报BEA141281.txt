@@ -1,0 +1,84 @@
+<BEA-141281> <unable to get file lock, will retry ...> --reference
+
+I ran into this error the first time I restarted Weblogic on one of my installs, the only reference that I was able to find is the error description below:
+
+ 
+BEA-141281
+
+Info: unable to get file lock, will retry …
+
+Description
+
+This message indicates that WLS can not get file lock because other process still holds the lock. W LS will try again before timeout.
+Cause
+
+This is an information-level message only.
+Action
+
+If WLS fails to start due to unable to get file lock, then lock files need to be removed manually before restart WLS.
+The funny thing is that it tells you to remove the locks but doesn’t provide their location, if you are running OBIEE 11g you can remove AdminServer.lok from:
+
+d:\oracle\fmw\user_projects\domains\bifoundation_domain\servers\AdminServer\tmp
+
+If you are not using Weblogic in the context of Oracle Busines Intelligence you can do a file search for any lok files under your middleware home (d:\oracle\fmw).
+
+------------------------------------------------
+
+概述
+由于先前服务器直接down掉了，所有进程都非正常的进行关闭了，也就导致了下次启动weblogic的时候报了以下错误：
+
+<2012-3-2 下午05时08分34秒 CST> <Info> <Management> <BEA-141281> <unable to get file lock, will retry …> 
+<2012-3-2 下午05时08分44秒 CST> <Info> <Management> <BEA-141281> <unable to get file lock, will retry …>
+
+解决办法
+一.删掉Domain下的*.lok文件
+
+1. 删除edit.lok
+
+进入到domain_home下：
+
+cd /u01/Oracle/Middleware/user_projects/domains/idm_domain
+
+将edit.lok文件删掉
+
+rm edit.lok
+
+2.删除config.lok
+
+进入到domain_home/config下：
+
+cd /u01/Oracle/Middleware/user_projects/domains/idm_domain/config/
+
+将config.lok文件删掉
+
+rm config.lok
+
+3.删除AdminServer.lok
+
+cd /u01/Oracle/Middleware/user_projects/domains/idm_domain/servers/AdminServer/tmp
+
+rm AdminServer.lok
+
+4.删除EmbeddedLDAP.lok
+
+/u01/Oracle/Middleware/user_projects/domains/idm_domain/servers/AdminServer/data/ldap/ldapfiles
+
+rm EmbeddedLDAP.lok
+
+二.删掉Domain下的*.DAT文件：
+
+进入到domain_home当中
+
+cd /u01/Oracle/Middleware/user_projects/domains/idm_domain
+
+找到文件被删掉
+
+[oracle@idm idm_domain]$ find servers/ -name "*.DAT" 
+servers/AdminServer/data/store/diagnostics/WLS_DIAGNOSTICS000000.DAT 
+servers/AdminServer/data/store/default/_WLS_ADMINSERVER000000.DAT
+
+重新启动weblogic，搞定！
+
+------------------------------------------------
+
+转自：http://blog.csdn.net/repoem/article/details/7074539

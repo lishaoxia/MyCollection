@@ -1,0 +1,48 @@
+expdp遇到ORA-39126错误
+
+ 
+问题描述：
+Oracle数据库是11.2.0.4的RAC，在其中一个节点上面进行expdp,报以下错误：
+
+Estimate in progress using BLOCKS method...
+ ORA-39126: Worker unexpected fatal error in KUPW$WORKER.FETCH_XML_OBJECTS []
+ ORA-00904: : invalid identifier
+
+ORA-06512: at "SYS.DBMS_SYS_ERROR", line 86
+ ORA-06512: at "SYS.KUPW$WORKER", line 9710
+
+----- PL/SQL Call Stack -----
+  object      line  object
+  handle    number  name
+ 0x104ec64fb0    21979  package body SYS.KUPW$WORKER
+ 0x104ec64fb0      9742  package body SYS.KUPW$WORKER
+ 0x104ec64fb0    11838  package body SYS.KUPW$WORKER
+ 0x104ec64fb0    14674  package body SYS.KUPW$WORKER
+ 0x104ec64fb0      2734  package body SYS.KUPW$WORKER
+ 0x104ec64fb0    10422  package body SYS.KUPW$WORKER
+ 0x104ec64fb0      1824  package body SYS.KUPW$WORKER
+ 0x10373876f8        2  anonymous block
+
+Estimate in progress using BLOCKS method...
+ ORA-39126: Worker unexpected fatal error in KUPW$WORKER.FETCH_XML_OBJECTS []
+ ORA-00904: : invalid identifier
+
+ORA-06512: at "SYS.DBMS_SYS_ERROR", line 86
+ ORA-06512: at "SYS.KUPW$WORKER", line 9710
+
+----- PL/SQL Call Stack -----
+  object      line  object
+  handle    number  name
+ 0x104ec64fb0    21979  package body SYS.KUPW$WORKER
+ 0x104ec64fb0      9742  package body SYS.KUPW$WORKER
+ 0x104ec64fb0    11838  package body SYS.KUPW$WORKER
+ 0x104ec64fb0    14674  package body SYS.KUPW$WORKER
+ 0x104ec64fb0      2734  package body SYS.KUPW$WORKER
+ 0x104ec64fb0    10422  package body SYS.KUPW$WORKER
+ 0x104ec64fb0      1824  package body SYS.KUPW$WORKER
+ 0x10373876f8        2  anonymous block
+
+解决方法：
+grant execute on DBMS_METADATA to 用户名;
+
+执行之后再次进行导出。

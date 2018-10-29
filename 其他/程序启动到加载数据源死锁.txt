@@ -1,0 +1,7 @@
+
+Select b.SID,b.SERIAL#,a.name,a.owner
+  From dba_ddl_locks a,v$session b
+ Where a.session_id= b.SID
+   And a.name  like '%DNA%'
+
+KILLµô

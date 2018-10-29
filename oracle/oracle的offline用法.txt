@@ -1,0 +1,54 @@
+ 数据文件、表空间offline用法及区别 2011-08-16 21:17:57 
+
+
+
+分类： Linux
+
+
+
+对数据库的脱机包括数据文件的脱机和对表空间的脱机，表空间脱机实际就是表空间对应的所有数据文件脱机。
+
+1.         数据文件OFFLINE
+
+数据文件添加到表空间之后不能够被删除的，没有语法支持这么做，如果想不使用该数据文件，唯一是将数据文件设置为OFFLINE状态。执行以下步骤将数据文件设置为OFFLINE状态：
+
+1)         如果是归档模式可以执行如下SQL设置数据文件的状态为OFFLINE：
+
+
+ALTER DATABASE DATAFILE 'XXXX.DBF' OFFLINE;
+
+2)         如果是非归档模式执行以下SQL将数据文件状态设置为OFFLINE：  (不要在非归档模式offline，无法online)
+
+
+ALTER DATABASE DATAFILE 'XXXX.DBF' OFFLINE DROP;
+
+数据文件脱机，数据文件相关的数据字典信息、元数据信息都依然存在，当表空间被删除后，相关数据文件的信息才会被清除。DROP TABLESPACE只是清空Oracle数据字典信息，即使数据文件不存在都可以正常的DROP表空间。对于数据文件的脱机，在设置该数据文件ONLINE的时候都需要对该数据文件执行介质恢复。
+
+如果在非归档模式下使用OFFLINE DROP使数据文件脱机，这就意味着该数据文件可能无法再恢复到ONLINE状态，原因就在于在非归档模式可能没有足够的日志执行ONLINE的介质恢复。如果日志未发生切换，还依然存在的话，依然可以执行介质恢复后使数据文件ONLINE。
+
+2.         表空间OFFLINE
+
+表空间脱机分为正常脱机、临时脱机和立即脱机，下面讨论这三种脱机方式。
+
+1)         OFFLINE NORMAL
+
+这是默认的选项，正常情况表空间的脱机，当重新执行ONLINE时，Oracle会用相应的SCN来更新表空间数据文件头SCN即可正常的ONLINE表空间，不需要执行介质恢复。
+
+
+ALTER TABLESPACE XXX OFFLINE [NORMAL];
+
+2)         OFFLINE TEMPORARY
+
+如果指定TEMPORARY，Oracle数据库为表空间中所有在线数据文件执行一个检查点，但是不能确保所有文件能被同步。当执行这个语句数据文件已经脱机，那么在使表空间重新ONLINE之前需要执行介质恢复。
+
+
+ALTER TABLESPACE XXX OFFLINE TEMPORARY;
+
+3)         OFFLINE IMMEDIATE
+
+执行这个操作表示立即使表空间脱机，在下次使表空间ONLINE的时候必须执行介质恢复，介质恢复成功才能使表空间ONLINE：
+
+
+ALTER TABLESPACE XXX OFFLINE IMMEDIATE;
+
+对于数据文件的脱机来说，在下次ONLINE的时候一定要执行介质恢复过程，如果介质恢复成功，那么就可以成功ONLINE。对于正常的表空间脱机，下次使表空间ONLINE的时候不需要执行介质恢复。对于OFFLINE TEMPORARY的表空间，如果脱机前已经有数据文件是脱机的，那么在表空间上线前也需要执行部分数据文件的介质恢复。对于IMMEDIATE OFFLINE的表空间，在表空间上线前需要对表空间的所有数据文件执行介质恢复。脱机后的数据文件和表空间，在实例重启的时候都不会对数据文件的SCN号进行验证。

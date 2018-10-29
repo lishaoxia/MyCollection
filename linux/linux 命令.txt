@@ -1,0 +1,190 @@
+1.查看防火墙状态：
+service iptables status
+
+2.永久性生效，重启后不会复原，设置后需重启
+开启：
+chkconfig iptables on
+
+关闭：
+chkconfig iptables off
+
+3.即时生效，重启后复原
+开启：
+service iptables start
+关闭：
+service iptables stop
+
+4、LINUX通过下面的命令可以开启允许对外访问的网络端口： 
+/sbin/iptables -I INPUT -p tcp --dport 8000 -j ACCEPT #开启8000端口 
+/etc/rc.d/init.d/iptables save #保存配置   //service iptables save
+/etc/rc.d/init.d/iptables restart #重启服务  //service iptables restart
+
+5、查看端口是否已经开放 
+/etc/init.d/iptables status 
+
+6、Netstat 命令用于显示各种网络相关信息，常用netstat -anp | grep 8080。
+常见参数
+-a (all)显示所有选项，默认不显示LISTEN相关
+-t (tcp)仅显示tcp相关选项
+-u (udp)仅显示udp相关选项
+-n 拒绝显示别名，能显示数字的全部转化成数字。
+-l 仅列出有在 Listen (监听) 的服務状态
+
+-p 显示建立相关链接的程序名
+-r 显示路由信息，路由表
+-e 显示扩展信息，例如uid等
+-s 按各个协议进行统计
+-c 每隔一个固定时间，执行该netstat命令。
+
+
+7、查看SELinux状态：
+
+/usr/sbin/sestatus -v      ##如果SELinux status参数为enabled即为开启状态
+SELinux status:                 enabled
+=getenforce                 ##也可以用这个命令检查
+
+8、关闭SELinux：
+
+临时关闭（不用重启机器）：
+setenforce 0                  ##设置SELinux 成为permissive模式
+                              ##setenforce 1 设置SELinux 成为enforcing模式
+修改配置文件需要重启机器：
+修改/etc/selinux/config 文件
+将SELINUX=enforcing改为SELINUX=disabled
+重启机器即可
+
+9、配置jdk环境变量
+方法一：在Shell下设置变量（该方法只对当前的shell有效，如果打开另一个shell就需要重新配置）
+export JAVA_HOME=/home/weblogic/jdk1.7.0_80/
+export PATH=$JAVA_HOME/bin:$PATH 
+export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+
+方法二：修改/etc/profile文件（该方法一劳永逸，设置一次，对所有用户有效）
+用vim编辑器打开/etc/profile文件，在文件尾部加入环境变量的定义
+export JAVA_HOME=/home/weblogic/jdk1.7.0_80/
+export PATH=$JAVA_HOME/bin:$PATH 
+export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+
+保存退出，source /etc/profile
+
+方法三：修改~/.bash_profile文件（该方法修改后只对当前用户有效，对该用户的所有shell都有效）
+用vim编辑器打开~/.bash_profile文件
+在文件尾部加入jdk环境变量的定义
+
+export JAVA_HOME=/home/weblogic/jdk1.7.0_80
+export PATH=$JAVA_HOME/bin:$PATH
+export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+source ~/.bash_profile
+
+10、后台运行命令
+nohup ./startWebLogic.sh >> ../servers/AdminServer/logs/nohup.log 2>&1 &
+nohup ./startup.sh > startup.log 2>&1 &
+
+
+11、开机自启动
+[root@linuxidc ~]# chkconfig nfs on 
+[root@linuxidc ~]# chkconfig rpcbind on 
+[root@linuxidc ~]# chkconfig --list nfs 
+nfs            0:关闭  1:关闭  2:启用  3:启用  4:启用  5:启用  6:关闭 
+[root@linuxidc ~]# chkconfig --list rpcbind 
+rpcbind        0:关闭  1:关闭  2:启用  3:启用  4:启用  5:启用  6:关闭 
+
+12.locale -a | grep zh_CN 查看已安装中文字符集
+
+13.ls -lR|grep "^-"|wc -l查看当前文件夹及其子文件夹的文件个数
+
+14.cat /proc/cpuinfo |grep "processor"|wc -l  查询机器的总线程个数
+
+15. cat /proc/cpuinfo |grep "physical id"|sort |uniq|wc -l 查看机器的CPU个数
+
+	cat /proc/cpuinfo| grep "cpu cores"| uniq  查看每颗cpu包含的核心数
+	
+	cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c  查询CPU厂商信息型号
+
+16./opt/jdk1.7.0_80/bin/jstack 13307 >/opt/test.log     线程dump
+
+17.查看系统版本：lsb_release -a
+   查看内核版本：cat /proc/version
+
+18.更详细的io统计信息(-x选项)
+
+为显示更详细的io设备统计信息，我们可以使用-x选项，在分析io瓶颈时，一般都会开启-x选项：
+
+复制代码
+linux # iostat -x -k -d 1
+Linux 2.6.16.60-0.21-smp (linux)     06/13/12
+
+……
+Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz avgqu-sz   await  svctm  %util
+sda               0.00  9915.00    1.00   90.00     4.00 34360.00   755.25    11.79  120.57   6.33  57.60
+复制代码
+以上各列的含义如下：
+
+rrqm/s: 每秒对该设备的读请求被合并次数，文件系统会对读取同块(block)的请求进行合并
+wrqm/s: 每秒对该设备的写请求被合并次数
+r/s: 每秒完成的读次数
+w/s: 每秒完成的写次数
+rkB/s: 每秒读数据量(kB为单位)
+wkB/s: 每秒写数据量(kB为单位)
+avgrq-sz:平均每次IO操作的数据量(扇区数为单位)
+avgqu-sz: 平均等待处理的IO请求队列长度
+await: 平均每次IO请求等待时间(包括等待时间和处理时间，毫秒为单位)
+svctm: 平均每次IO请求的处理时间(毫秒为单位)
+%util: 采用周期内用于IO操作的时间比率，即IO队列非空的时间比率
+ 
+
+对于以上示例输出，我们可以获取到以下信息：
+
+每秒向磁盘上写30M左右数据(wkB/s值)
+每秒有91次IO操作(r/s+w/s)，其中以写操作为主体
+平均每次IO请求等待处理的时间为120.57毫秒，处理耗时为6.33毫秒
+等待处理的IO请求队列中，平均有11.79个请求驻留
+ 
+
+以上各值之间也存在联系，我们可以由一些值计算出其他数值，例如：
+
+util = (r/s+w/s) * (svctm/1000)
+
+对于上面的例子有：util = (1+90)*(6.33/1000) = 0.57603
+
+
+
+---find . -name "*.o"  | xargs rm -f
+---rm -rf "*.o" 只是删除当前目录下的所有文件，不会递归子目录！
+
+.tar.gz     格式解压为          tar   -zxvf   xx.tar.gz
+.tar.bz2   格式解压为          tar   -jxvf    xx.tar.bz2
+
+
+--   zip -r a.zip dir1 dir2 将目录dir1和目录dir2中的内容打包到z.zip, -r表示递归的打包，即将dir1 和dir2里面的内容一块打包，不加-r打包的只是dir1和dir2两个空目录。-q参数安静打包，不显示打包过程
+
+
+
+du -h --max-depth=1  看目录下所有一级子目录文件夹大小 
+
+
+nohup命令：如果你正在运行一个进程，而且你觉得在退出帐户时该进程还不会结束，那么可以使用nohup命令。该命令可以在你退出帐户/关闭终端之后继续运行相应的进程。nohup就是不挂起的意思( n ohang up)。 
+该命令的一般形式为：nohup command & 
+ls xxx 1>out.txt 2>&1 
+nohup /mnt/Nand3/H2000G >/dev/null 2>&1 & 
+对 于& 1 更准确的说应该是文件描述符 1,而1 一般代表的就是STDOUT_FILENO,实际上这个操作就是一个dup2(2)调用.他标准输出到all_result ,然后复制标准输出到文件描述符2(STDERR_FILENO),其后果就是文件描述符1和2指向同一个文件表项,也可以说错误的输出被合并了.其中0 表示键盘输入 1表示屏幕输出 2表示错误输出.把标准出错重定向到标准输出,然后扔到/DEV/NULL下面去。通俗的说，就是把所有标准输出和标准出错都扔到垃圾桶里面。 
+command >out.file 2>&1 & 
+command >out.file是将command的输出重定向到out.file文件，即输出内容不打印到屏幕上，而是输出到out.file文件中。 2>&1 是将标准出错重定向到标准输出，这里的标准输出已经重定向到了out.file文件，即将标准出错也输出到out.file文件中。最后一个& ， 是让该命令在后台执行。
+
+试想2>1代表什么，2与>结合代表错误重定向，而1则代表错误重定向到一个文件1，而不代表标准输出； 
+换成2>&1，&与1结合就代表标准输出了，就变成错误重定向到标准输出.
+
+
+
+mkdir -p test/test1 #-p 如果没有test目录则创建test再创建test1，否则只能一级一级创建
+
+
+1. test用户 增加到组wheel
+	usermod -G wheel test
+
+2. 从wheel组中删除 test用户
+gpasswd wheel -d test
+
+快速创建一个1G的文件
+dd if=/dev/zero of=a.txt bs=1M count=1024
+其中 if=输入的文件，of=输出文件，bs=块大小 ，count=块数量。 

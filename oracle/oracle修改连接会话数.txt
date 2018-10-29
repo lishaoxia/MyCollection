@@ -1,0 +1,60 @@
+ORACLE查看并修改最大连接数 (2010-03-15 10:11:07)转载▼
+标签： it	分类： 数据库
+第一步,在cmd命令行，输入sqlplus
+第二步，根据提示输入用户名与密码
+1. 查看processes和sessions参数
+　　SQL> show parameter processes
+　　NAME                                  TYPE         VALUE
+　　db_writer_processes                  integer     1
+　　gcs_server_processes                 integer     0
+　　job_queue_processes                  integer     10
+　　log_archive_max_processes            integer     2
+　　processes                            integer     50
+　　SQL> show parameter sessions
+　　NAME                                  TYPE         VALUE
+　　license_max_sessions                 integer     0
+　　license_sessions_warning             integer     0
+　　logmnr_max_persistent_sessions       integer     1
+　　sessions                             integer     60
+　　shared_server_sessions               integer
+　　2. 修改processes和sessions值
+　　SQL> alter system set processes=300 scope=spfile;
+　　系统已更改。
+　　SQL> alter system set sessions=335 scope=spfile;
+　　系统已更改。
+　　3. 修改processes和sessions值必须重启oracle服务器才能生效
+　　ORACLE的连接数(sessions)与其参数文件中的进程数(process)有关，它们的关系如下：
+　　sessions=(1.1*process+5)
+　　摘（二）
+　　查询数据库当前进程的连接数：
+　　select count(*) from v$process;
+　　查看数据库当前会话的连接数：
+　　select count(*) from v$session;
+　　查看数据库的并发连接数：
+　　select count(*) from v$session where status='ACTIVE';
+　　查看当前数据库建立的会话情况：
+　　select sid,serial#,username,program,machine,status from v$session;
+　查询数据库允许的最大连接数：
+　　select value from v$parameter where name = 'processes';
+　　或者：show parameter processes;
+　　修改数据库允许的最大连接数：
+　　alter system set processes = 300 scope = spfile;
+　　(需要重启数据库才能实现连接数的修改)
+　　重启数据库：
+　　shutdown immediate;
+　　startup;
+　　查看当前有哪些用户正在使用数据：
+　　select osuser,a.username,cpu_time/executions/1000000||'s',sql_fulltext,machine
+　　from v$session a,v$sqlarea b
+　　where a.sql_address = b.address
+　　order by cpu_time/executions desc;
+　　备注：UNIX 1个用户session对应一个操作系统process，而Windows体现在线程。
+　　启动oracle
+　　su - oracle
+　　sqlplus system/pwd as sysdba   //进入sql
+　　startup                                      //启动数据库
+　　lsnrctl start                               //启动监听
+　　sqlplus "/as sysdba"
+　　shutdown immediate;
+　　startup mount;
+　　alter database open;

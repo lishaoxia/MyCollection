@@ -1,0 +1,45 @@
+1、unittest的discover方法的pattern参数
+unittest.defaultTestLoader.discover(path, pattern='test_*.py', )
+经实际验证，匹配path目录及子目录下所有test_开头的.py文件下的test_开头的方法
+所有测试用例的.py文件以及测试用例的方法都应以test_开头，目录名和类名无要求
+--
+unittest模块中的TestLoader类有一个discover方法（Python2.7之后）discover(start_dir, pattern='test*.py',top_level_dir=None)递归查找指定目录（start_dir）及其子目录下的全部测试模块，将这些测试模块放入一个TestSuite 对象并返回。只有匹配pattern的测试文件才会被加载到TestSuite中。如果一个测试文件的名称符合pattern，将检查该文件是否包含 load_tests() 函数，如果 load_tests() 函数存在，则由该函数负责加载本文件中的测试用例。如果不存在，就会执行loadTestsFromModule()，查找该文件中派生自TestCase 的类包含的 test 开头的方法。
+--------------------- 
+作者：jelolu 
+来源：CSDN 
+原文：https://blog.csdn.net/jelolu/article/details/40397323 
+版权声明：本文为博主原创文章，转载请附上博文链接！
+
+2、tearDown()方法self.webdriver.close()与self.webdriver.quit()方法的区别
+close()关闭当前窗口
+quit()关闭所有关联窗口
+另外，在使用中发现，tearDownClass(cls)中使用close()方法，进程中仍存在webdriver进程，tearDown(self)中未发现此问题。
+用quit()方法代替后正常
+
+3、测试用例中的验证方法要使用try: ... except Exception as e:...以免出现异常脚本停止运行
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

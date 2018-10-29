@@ -1,0 +1,13 @@
+ linux umount 时出现device is busy 的处理方法--fuser
+
+
+要把这个资源释放的话, 可以有下述做法:
+
+    * fuser -mvik /mnt/share # 会问你是不是要把 25023 这个 kill 掉, 选 y 就会 kill 掉
+
+          提示信息如下:
+          USER      PID   ACCESS COMMAND
+          /meida/share: root      25023 ..c..  bash
+          Kill process 25023 ? (y/N) y
+		  
+		  

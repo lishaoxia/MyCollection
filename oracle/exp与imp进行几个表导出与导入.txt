@@ -1,0 +1,22 @@
+这两天要进行数据的导入导出，也学习了一下在linux下使用oracle的exp与imp命令。
+
+一、先说exp：
+这是用于导出数据用的命令，本次主要用它来把几个表的数据导出来。命令如下：
+
+exp oracleuser/passwd file=/mydata/dat.dmp tables=(table1,table2,table3)。其中/mydata是用于存放数据文件的目录。
+
+如果数据很多，导出来的文件就可能很大，而操作系统对单个文件的大小又有限制时就要分割成几个文件来导出，如下：
+
+exp oracleuser/passwd file=(/mydata/dat1.dmp,/mydata/dat2.dmp,mydata/dat3.dmp) tables=(table1,table2,table3) filesize=1.9G。这样，一个文件到了1.9G后写到第二个文件中。
+
+二、说imp，导入：
+
+这是用于导入数据的，命令如下：
+
+imp oracleuser/passwd file=/myimpdat/dat.dmp ignore=y tables=(table1,table2,table3)
+
+如果在导出的时候进行了文件分割就可以一条命令中导入几个文件：
+
+imp oracleuser/passwd file=(/myimpdat/dat1.dmp,/myimpdat/dat2.dmp) ignore=y tables=table1,table2,table3)
+
+如果导出时进行了文件分割，在导出时又没有把所有文件都写命令中，oracle会一个个地询问的文件路径，此时把文件路径输进去，也可以进行导入。
