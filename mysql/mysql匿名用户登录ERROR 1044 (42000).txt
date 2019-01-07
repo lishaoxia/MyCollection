@@ -1,0 +1,87 @@
+提示：ERROR 1044 (42000): Access denied for user ''@'localhost' to database 存在用户名为空的账户即匿名账户，导致登录的时候是虽然用的是root，但实际是匿名登录的，通过错误提示里的for user ''@'localhost'可以看出来，user后面的用户名是空的，如果是root的话，则应该是for user 'root'@'localhost',所以是匿名登录的。
+
+解决办法：
+1、停掉mysql服务。dos: net stop mysql (管理员)  
+
+2、在my-default.ini文件的末尾添加：skip-grant-tables
+
+3、安全启动mysql,
+到WINDOWS的命令行了（‘DOS’ 下），切换到你的MySQL bin目录下。 比如我的是 C:\Program Files\MySQL\MySQL Server 5.1\bin
+然后敲下面的粗体的命令。注意你的my.ini位置。Linux下命令为：# mysqld_safe --user=mysql --skip-grant-tables --skip-networking & 
+
+C:\Program Files\MySQL\MySQL Server 5.1\bin>mysqld  --defaults-file="C:\Program
+Files\MySQL\MySQL Server 5.1\my.ini" --console --skip-grant-tables
+090515 22:06:09 [Warning] The syntax '--log' is deprecated and will be removed i
+n MySQL 7.0. Please use '--general_log'/'--general_log_file' instead.
+090515 22:06:09 [Warning] The syntax '--log_slow_queries' is deprecated and will
+ be removed in MySQL 7.0. Please use '--slow_query_log'/'--slow_query_log_file'
+instead.
+090515 22:06:09 [Warning] The syntax '--log' is deprecated and will be removed i
+n MySQL 7.0. Please use '--general_log'/'--general_log_file' instead.
+090515 22:06:09 [Warning] The syntax '--log_slow_queries' is deprecated and will
+ be removed in MySQL 7.0. Please use '--slow_query_log'/'--slow_query_log_file'
+instead.
+090515 22:06:09 [ERROR] The update log is no longer supported by MySQL in versio
+n 5.0 and above. It is replaced by the binary log. Now starting MySQL with --log
+-bin='' instead.
+090515 22:06:09  InnoDB: Started; log sequence number 0 324221
+090515 22:06:09 [Note] mysqld: ready for connections.
+Version: '5.1.33-community-log'  socket: ''  port: 3306  MySQL Community Server
+(GPL)
+看到这个结果就说明MySQL已经起来了
+
+4、
+再开一个DOS窗口，同样切到mysql bin目录下，
+C:\Program Files\MySQL\MySQL Server 5.1\bin>mysql -uroot 
+
+
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 2
+Server version: 5.1.33-community-log MySQL Community Server (GPL)
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql>
+
+5、
+mysql>use mysql；
+mysql>select host,user,password from user; 查看user为空的记录，即为匿名用户
+mysql>update user set user='root',password='lichao' where host='localhost'; 更新用户名，将空改为root
+mysql>GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'lichao' WITH GRANT OPTION;
+mysql> FLUSH PRIVILEGES;
+
+6、关掉安全启动
+
+7、正常启动mysql服务
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
