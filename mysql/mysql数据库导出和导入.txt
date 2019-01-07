@@ -1,0 +1,39 @@
+导出：
+命令行下具体用法如下： 
+mysqldump -u用戶名 -p密码 -d 数据库名 表名 > 脚本名;
+
+导出整个数据库结构和数据
+mysqldump -h localhost -uroot -p123456 database > dump.sql 
+mysqldump -h192.168.1.1 -uroot -p123456 mydb > mydb.bak;      //将192.168.1.1主机上的mydb数据库导出到本地的mydb.bak文件中，后缀也可以是.bak
+
+导出单个数据表结构和数据
+mysqldump -h localhost -uroot -p123456  database table > dump.sql
+mysqldump -h192.168.1.1 -uroot -p123456 mydb tb1 > tb1.bak;   //将192.168.1.1主机上的mydb数据库的tb1数据表导出到本地的tb1.bak文件中
+
+导出整个数据库结构（不包含数据）
+mysqldump -h localhost -uroot -p123456  -d database > dump.sql 			//加参数-d,只导出数据库结构
+
+导出单个数据表结构（不包含数据）
+mysqldump -h localhost -uroot -p123456  -d database table > dump.sql	//加参数-d，只导出表结构
+
+
+导入：
+1、直接导入：
+mysql -u用户名 -p 数据库名 < 数据库名.sql
+mysql -uroot -p mybase < /home/dump.sql
+mysql -uroot -p mybase < e:\dump.bak
+
+2、登录数据库，再导入
+1)、mysql -uroot -proot
+
+2)、mysql>use mybase;
+
+3)、mysql>source /home/mybase.sql;  或 mysql>source /home/mybase.bak;
+
+
+导出查询结果：
+mysql -h10.10.10.10 -uroot -p123456 -P3306 -Ne "use test; select * from tb_test;" > /tmp/rs.txt
+
+
+
+
