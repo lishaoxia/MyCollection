@@ -16,6 +16,9 @@ mysqldump -h localhost -uroot -p123456  -d database > dump.sql 			//加参数-d,
 导出单个数据表结构（不包含数据）
 mysqldump -h localhost -uroot -p123456  -d database table > dump.sql	//加参数-d，只导出表结构
 
+Navicat可视化工具导出：
+选中数据库，右键-转储sql文件（dump sql file）,可以选择导出表结构和数据或只导出表结构
+
 
 导入：
 1、直接导入：
@@ -29,6 +32,9 @@ mysql -uroot -p mybase < e:\dump.bak
 2)、mysql>use mybase;
 
 3)、mysql>source /home/mybase.sql;  或 mysql>source /home/mybase.bak;
+
+3、Navicat可视化工具导入
+选中数据库（没有的话需要先创建一个数据库），右键-运行sql文件（execute sql file）。
 
 
 导出查询结果：
