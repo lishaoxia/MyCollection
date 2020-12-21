@@ -57,6 +57,14 @@ $ rm  test.txt  #工作区删除，也可以手动删除
 $ git rm test.txt
 $ git commit -m "remove test.txt"
 
+16. 查看当前登录账号：
+	git config user.name
+	查看当前登录邮箱：
+	git config user.email
+	修改用户名和邮箱：
+	git config --global user.name "Your_username"
+	git config --global user.email "Your_email"
+
 ----------------------------------------远程仓库GitHub-----------------------------------------
 
 16、本地Git仓库和GitHub仓库之间ssh加密
