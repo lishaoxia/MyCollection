@@ -74,14 +74,20 @@ unmodify：文件已入到git库中，未修改，文件内容与本地库的文
 modified：文件已入到git库中，经过修改，文件内容与本地库的文件快照内容不一致，untracked和modified都是未暂存状态。
 staged：暂存状态
 
-18、git clean 用法
+18、git reset --hard origin/master 作用详解
+执行该命令，会将版本回退到最后一次同步的版本（pull和push都算同步），不管本次修改是否commit，是否暂存，只要没有push，执行git reset --hard origin/master就会把
+版本回退到上一次代码同步的版本（上一次同步的版本，包含push同步和pull同步）。该命令可以清除未同步的所有修改，但是不能清除未跟踪（untracked）的文件（一般为新建的文件，没有添加到暂存）。
+备注：此命令开发机器慎用，容易丢失未同步的代码，可在生产机器pull远程代码时使用。
+
+
+19、git clean 用法
 git clean -n		仅列出将要被删除的文件，但没有删除文件。
 git clean -f		删除当前目录下所有untracked的文件，不会删除 .gitignore 文件里面指定的文件夹和文件。
 git clean -f <path> 删除指定目录下所有untracked的文件，不会删除 .gitignore 文件里面指定的文件夹和文件。
 git clean -fd 	 	删除当前目录下untracked的文件和文件夹
 git clean -xf		删除当前目录下所有untracked的文件，不管是否是 .gitignore 文件里面指定的文件夹和文件
-git clean -f 不会删除modified状态的文件，git reset --hard 可以回退到最近一次提交的版本，清除已暂存（staged）和已修改未暂存（modified）的文件，但不会清除未跟踪（untracked）的文件。
-git clean -f和git reset --hard 结合使用（都执行），工作目录和缓存区回到最近一次commit时候一摸一样的状态，git status会告诉你这是一个干净的工作目录, 又是一个新的开始了！
+git clean -f 不会删除modified、已暂存、已提交状态的文件，git reset --hard origin/master 可以回退到最近一次同步的版本（详解见上一条），清除未同步的文件，但不会清除未跟踪（untracked）的文件。
+git clean -f和git reset --hard origin/master 结合使用（都执行），工作目录和缓存区回到最近一次同步时（包含pull同步和push同步）一摸一样的状态，git status会告诉你这是一个干净的工作目录, 又是一个新的开始了！
 
 
 ----------------------------------------远程仓库GitHub-----------------------------------------
@@ -210,9 +216,6 @@ $ git push origin --tags
 $ git tag -d v0.9	#先从本地删除
 $ git push origin :refs/tags/v0.9		#然后，从远程删除
 
-
-
-李超
 
 
 
