@@ -45,7 +45,7 @@ $ git reflog  通过版本日志查看回退前的版本序列号
 $ git reset --hard 8349db3(回退前版本序列号)
 
 12、丢弃工作区的修改
-$ git check -- test.txt		
+$ git checkout -- test.txt		
 #--前后有空格，不可省略"--",没有"--"，就变成了“切换到另一个分支”的命令
 #实质是用当前版本库的文件替换工作区的文件
 
@@ -53,7 +53,7 @@ $ git check -- test.txt
 $ git reset HEAD test.txt	#git reset命令既可以回退版本，也可以把暂存区的修改回退到工作区。当我们用HEAD时，表示最新的版本。
 
 14、工作区误删了文件，想要恢复
-$ git check -- test.txt  #同12条，实质是用当前版本库的文件替换工作区的文件
+$ git checkout -- test.txt  #同12条，实质是用当前版本库的文件替换工作区的文件
 
 15、工作区删除文件，版本库也要删除此文件
 $ rm  test.txt  #工作区删除，也可以手动删除
