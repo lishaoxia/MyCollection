@@ -50,7 +50,7 @@ $ git checkout -- test.txt
 #实质是用当前版本库的文件替换工作区的文件
 
 13、丢弃添加到暂存区的修改
-$ git reset HEAD test.txt	#git reset命令既可以回退版本，也可以把暂存区的修改回退到工作区。当我们用HEAD时，表示最新的版本。
+$ git reset HEAD test.txt	#git reset命令既可以回退版本，也可以把暂存区的修改回退到工作区。当我们用HEAD时，表示退回到最新的版本，即最后一个提交后的版本。
 
 14、工作区误删了文件，想要恢复
 $ git checkout -- test.txt  #同12条，实质是用当前版本库的文件替换工作区的文件
@@ -61,12 +61,26 @@ $ git rm test.txt
 $ git commit -m "remove test.txt"
 
 16. 查看当前登录账号：
-	git config user.name
+$  git config user.name
 	查看当前登录邮箱：
-	git config user.email
+$  git config user.email
 	修改用户名和邮箱：
-	git config --global user.name "Your_username"
-	git config --global user.email "Your_email"
+$  git config --global user.name "Your_username"
+$  git config --global user.email "Your_email"
+
+17、Git版本控制中的文件分为以下四种状态：
+untracked：未跟踪，一般为新建的文件，此文件未加入到git库，不参与版本控制，通过git add加入暂存，参与版本控制。
+unmodify：文件已入到git库中，未修改，文件内容与本地库的文件快照内容完全一致。
+modified：文件已入到git库中，经过修改，文件内容与本地库的文件快照内容不一致，untracked和modified都是未暂存状态。
+staged：暂存状态
+
+18、git clean 用法
+git clean -n		仅列出将要被删除的文件，但没有删除文件。
+git clean -f		删除当前目录下所有untracked的文件，不会删除 .gitignore 文件里面指定的文件夹和文件。
+git clean -f <path> 删除指定目录下所有untracked的文件，不会删除 .gitignore 文件里面指定的文件夹和文件。
+git clean -fd 	 	删除当前目录下untracked的文件和文件夹
+git clean -xf		删除当前目录下所有untracked的文件，不管是否是 .gitignore 文件里面指定的文件夹和文件
+
 
 ----------------------------------------远程仓库GitHub-----------------------------------------
 
@@ -193,6 +207,9 @@ $ git push origin --tags
 7、如果标签已经推送到远程，要删除远程标签就麻烦一点
 $ git tag -d v0.9	#先从本地删除
 $ git push origin :refs/tags/v0.9		#然后，从远程删除
+
+
+aaaaaa
 
 
 
