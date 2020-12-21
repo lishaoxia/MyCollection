@@ -67,54 +67,66 @@ $ git commit -m "remove test.txt"
 
 ----------------------------------------远程仓库GitHub-----------------------------------------
 
-16、本地Git仓库和GitHub仓库之间ssh加密
+1、本地Git仓库和GitHub仓库之间ssh加密
 $ ssh-keygen -t rsa -C "youremail@example.com"
 #执行此命令后，会在用户主目录生成.ssh目录，里面有id_rsa和id_rsa.pub两个文件
 #登陆GitHub，打开“Account settings”--“SSH Keys”页面,点“Add SSH Key”，填上任意Title，在Key文本框里粘贴id_rsa.pub文件的内容
 
-17、本地库与远程库关联
+2、本地库与远程库关联
 $ git remote add origin git@github.com:lishaoxia/AutoTestDemo.git
 #远程库的名字就是origin，这是Git默认的叫法，也可以改成别的
 
-18、本地库删除远程库管理
+3、本地库删除远程库管理
 $ git remote rm origin
 
-19、本地库修改远程库管理
+4、本地库修改远程库管理
 $ git remote origin set-url git@github.com:lishaoxia/AutoTestDemo.git
 
-20、推送本地仓库的文件到远程仓库
+5、推送本地仓库的文件到远程仓库
 $ git push origin master	#把本地master分支的最新修改推送至GitHub，推送dev分支就是git push origin dev
 
-21、克隆远程仓库到本地,在哪个目录执行，执行完成后这个目录就变成了本地仓库
-$ git clone git@github.com:lishaoxia/order.git
+6、克隆远程仓库到本地,不指定目录时，会将项目克隆到当前目录下，生成与远程项目名称相同的目录，项目目录则为工作目录。
+	如果在后面指定目录，会将远程项目内的文件克隆到指定目录，不会生成远程项目名称相同的目录
+	
+$ git clone git@github.com:lishaoxia/MyCollection.git		（如果在e盘执行命令，工作目录为/e/MyCollection）
+$ git clone git@github.com:lishaoxia/MyCollection.git ./ABC  （如果在e盘执行命令，工作目录为/e/ABC）
+
+备注：上面两种命令的目标目录，不管是当前目录或者是指定的目录不能有.git文件夹。克隆完成后会在工作目录生成.git文件夹。
+
+7、拉取远程变更内容
+$ git pull origin master
+
+8、获取变更并合并，操作等价于git pull 
+$ git fetch origin 显示远程更新的内容
+$ git merge origin/master 将远程更新内容同步到本地
 
 ------------------------------------------分支--------------------------------------------------
-22、查看当前分支，
+1、查看当前分支，
 $ git branch	#当前分支前面会标一个*号
 
-23、创建dev分支
+2、创建dev分支
 $ git branch dev
 
-24、切换到dev分支
+3、切换到dev分支
 $ git checkout dev
 
-25、创建并切换dev分支，相当于上面两条命令
+4、创建并切换dev分支，相当于上面两条命令
 $ git checkout -b dev
 
-26、dev分支编辑文件，提交到dev分支
+5、dev分支编辑文件，提交到dev分支
 $ git checkout dev
 $ vi test.txt(编辑)		#编辑后master和dev分支查看test.txt 内容都是编辑后的内容，由此可见分支共用一个工作区
 $ git add test.txt		#添加后master和dev分支查看test.txt 内容都是编辑后的内容，由此可见分支共用一个暂存区
 $ git commit -m "dev分支修改" 	#提交后，只有在dev分支，test.txt是修改后的内容，由此可见，commit将修改提交到了当前分支(dev分支)
 
-27、dev分支的修改合并到master分支上
+6、dev分支的修改合并到master分支上
 $ git checkout master		#先切换到master分支
 $ git merge dev 	#git merge命令用于合并指定分支到当前分支
 
-28、合并完成后，就可以放心地删除dev分支了
+7、合并完成后，就可以放心地删除dev分支了
 $ git branch -d  dev		#git branch -D  dev 强行删除，用户删除没有被合并的分支，
 
-29、解决分支冲突，dev分支test.txt文件新增“dev分支新增一行”，添加并提交，切换到master分支在test.txt文件新增“master分支新增一行”，添加并提交
+8、解决分支冲突，dev分支test.txt文件新增“dev分支新增一行”，添加并提交，切换到master分支在test.txt文件新增“master分支新增一行”，添加并提交
 	此时合并dev分支
 $ git merge dev		#Merge conflict in test.txt 提示合并时test.txt文件冲突
 $ cat test.txt 		#此时可以查看到冲突的内容，Git用<<<<<<<，=======，>>>>>>>标记出不同分支的内容
@@ -124,7 +136,7 @@ $ git add test.txt		#重新添加
 $ git commit test.txt -m "解决test.txt文件冲突"
 $ git merge dev		#提交后重新合并
 
-30、图形查看上面29分支的合并情况
+9、图形查看上面29分支的合并情况
 $ git log --graph --pretty=oneline --abbrev-commit			#下方*号记录了本次合并两个分支的提交记录
 *   4d89d85 (HEAD -> master) Merge branch 'dev'				 可以看出新建dev分支后，dev提交了一次 -m “dev新增一行” a816187
 |\															 master分支提交第一次 -m “master分支新增一行” 61fc33a
@@ -137,12 +149,12 @@ $ git log --graph --pretty=oneline --abbrev-commit			#下方*号记录了本次�
 * a8eeb37 提交testgit.txt文件
 * 5c52a58 提交文件
 
-30、bug分支，如果工作区工作到一半，这时要创建一个bug分支修改bug,工作区的内容可以先储存起来
+10、bug分支，如果工作区工作到一半，这时要创建一个bug分支修改bug,工作区的内容可以先储存起来
 $ git stash 		#储存工作区改动
 $ git stash list	#查看储存列表
 $ git stash pop 	#恢复工作区的改动
 
-31、多人协作，多人协作的工作模式通常是这样：
+11、多人协作，多人协作的工作模式通常是这样：
 1、首先，可以试图用git push origin <branch-name>推送自己的修改；
 2、如果推送失败，则因为远程分支比你的本地更新，需要先用git pull试图合并；
 3、如果合并有冲突，则解决冲突，并在本地提交；
@@ -150,32 +162,32 @@ $ git stash pop 	#恢复工作区的改动
 	#如果git pull提示no tracking information，则说明本地分支和远程分支的链接关系没有创建，
 	用命令git branch --set-upstream-to <branch-name> origin/<branch-name>。
 	
-32、查看远程库信息
+12、查看远程库信息
 $ git remote -v 
 
 
 -------------------------------------------------标签--------------------------------------------------------
-33、添加Tag,本版本最后一次提交了，需要定义一个版本，可以打一个标签
+1、添加Tag,本版本最后一次提交了，需要定义一个版本，可以打一个标签
 $ git tag V1.0
 
-34、默认标签是打在最新提交的commit上的。有时候，如果忘了打标签，比如，现在已经是周五了，但应该在周一打的标签没有打，怎么办？
+2、默认标签是打在最新提交的commit上的。有时候，如果忘了打标签，比如，现在已经是周五了，但应该在周一打的标签没有打，怎么办？
 $ git tag v0.9 f52c633		#后面的字符串是commit id
 
-35、还可以创建带有说明的标签，用-a指定标签名，-m指定说明文字：
+3、还可以创建带有说明的标签，用-a指定标签名，-m指定说明文字：
 $ git tag -a v0.1 -m "version 0.1 released" 1094adb
 
-36、用命令git show <tagname>可以看到说明文字：
+4、用命令git show <tagname>可以看到说明文字：
 $ git show v0.1
 
-37、如果标签打错了，也可以删除：
+5、如果标签打错了，也可以删除：
 $ git tag -d v0.1
 
-38、如果要推送某个标签到远程，使用命令git push origin <tagname>：
+6、如果要推送某个标签到远程，使用命令git push origin <tagname>：
 $ git push origin v1.0
 #或者，一次性推送全部尚未推送到远程的本地标签：
 $ git push origin --tags
 
-39、如果标签已经推送到远程，要删除远程标签就麻烦一点
+7、如果标签已经推送到远程，要删除远程标签就麻烦一点
 $ git tag -d v0.9	#先从本地删除
 $ git push origin :refs/tags/v0.9		#然后，从远程删除
 
