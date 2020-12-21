@@ -20,6 +20,9 @@ $ git commit -m "本次提交说明"
 5、查看版本库当前状态
 $ git status  #显示所有改动文件和状态（新增、修改、删除）
 
+如果git status查看git状态提示中文乱码:274\232\350\256\256\346\200\273\347\273\223.txt
+git bash 终端输入命令：git config --global core.quotepath false
+
 6、查看修改文件的改动内容
 $ git diff test.txt
 
