@@ -28,7 +28,7 @@ $ git diff test.txt
 
 7、查看前面的版本记录，比如从版本1.6回退到了1.5，此时使用git log 只显示1.5版本以前的提交记录
 $ git log   #显示当前版本之前的所有提交版本，从最近到最远的提交日志
---pretty=oneline 参数，一条记录一行显示，便于观看
+git log  --pretty=oneline 参数，一条记录一行显示，便于观看
 
 8、版本回退（回到过去）
 $ git reset --hard HEAD^
