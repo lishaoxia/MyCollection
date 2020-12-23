@@ -9,7 +9,9 @@ $ git init  #通过git init命令把这个目录变成Git可以管理的仓库(�
 
 3、添加文件到暂存区
 $ git add test.txt
-$ git add .    #添加当前目录的所有文件
+$ git add .    #表示添加新文件和编辑过的文件不包括删除的文件
+$ git add -u 表示添加编辑或者删除的文件，不包括新添加的文件。
+$ git add -A . #来一次添加所有改变的文件。
 
 4、把文件提交到仓库
 $ git commit -m "本次提交说明" 
@@ -44,16 +46,18 @@ $ git reflog
 $ git reflog  通过版本日志查看回退前的版本序列号
 $ git reset --hard 8349db3(回退前版本序列号)
 
-12、丢弃工作区的修改
-$ git checkout -- test.txt		
-#--前后有空格，不可省略"--",没有"--"，就变成了“切换到另一个分支”的命令
-#实质是用当前版本库的文件替换工作区的文件
+12、丢弃添加到暂存区的修改
+$ git reset HEAD test.txt	#git reset命令既可以回退版本，也可以把暂存区的修改回退到工作区，工作区的test.txt仍是add前修改的内容，只是又回到了未暂存状态。
+当我们用HEAD时，表示退回到最新的版本，即最后一个提交后的版本。
 
-13、丢弃添加到暂存区的修改
-$ git reset HEAD test.txt	#git reset命令既可以回退版本，也可以把暂存区的修改回退到工作区。当我们用HEAD时，表示退回到最新的版本，即最后一个提交后的版本。
+13、丢弃工作区的修改
+$ git checkout -- test.txt
+#--前后有空格，不可省略"--",没有"--"，就变成了“切换到另一个分支”的命令
+#如果test.txt修改后没有add，会恢复没修改时的版本；如果test.txt修改后已经add,又对test.txt进行了修改，此时执行该命令，会恢复到上次add时的内容。
+如果上次的修改也不想要了，可以使用git reset HEAD test.txt撤回暂存，再执行一次git checkout -- test.txt。
 
 14、工作区误删了文件，想要恢复
-$ git checkout -- test.txt  #同12条，实质是用当前版本库的文件替换工作区的文件
+$ git checkout -- test.txt  #同上条，实质是用当前版本库的文件替换工作区的文件
 
 15、工作区删除文件，版本库也要删除此文件
 $ rm  test.txt  #工作区删除，也可以手动删除
@@ -134,24 +138,36 @@ $ git branch dev
 
 3、切换到dev分支
 $ git checkout dev
+注意：git的工作区和储藏区是共享的，git 切换分支时会把未add或未commit的内容带过去， 这一点值得注意。
+要想在分支间切换，又不想又上述影响，怎么办呢？git stash搞起。要注意，在当前分支git stash的内容， 在其他分支也可以git stash pop出来，为什么？ 因为：工作区和暂存区是公共的。
+
 
 4、创建并切换dev分支，相当于上面两条命令
 $ git checkout -b dev
 
-5、dev分支编辑文件，提交到dev分支
+5、创建----远程分支----
+将新建的本地分支推送到远程服务器，远程分支与本地分支同名（当然可以随意起名）
+$ git push origin dev:dev
+
+6、dev分支编辑文件，提交到dev分支
 $ git checkout dev
 $ vi test.txt(编辑)		#编辑后master和dev分支查看test.txt 内容都是编辑后的内容，由此可见分支共用一个工作区
 $ git add test.txt		#添加后master和dev分支查看test.txt 内容都是编辑后的内容，由此可见分支共用一个暂存区
 $ git commit -m "dev分支修改" 	#提交后，只有在dev分支，test.txt是修改后的内容，由此可见，commit将修改提交到了当前分支(dev分支)
 
-6、dev分支的修改合并到master分支上
+7、dev分支的修改合并到master分支上
 $ git checkout master		#先切换到master分支
 $ git merge dev 	#git merge命令用于合并指定分支到当前分支
 
-7、合并完成后，就可以放心地删除dev分支了
+8、合并完成后，就可以放心地删除dev分支了
 $ git branch -d  dev		#git branch -D  dev 强行删除，用户删除没有被合并的分支，
 
-8、解决分支冲突，dev分支test.txt文件新增“dev分支新增一行”，添加并提交，切换到master分支在test.txt文件新增“master分支新增一行”，添加并提交
+9、删除远程分支
+$ git push origin --delete dev
+或者：
+$ git push origin :dev		#推送一个空分支到远程分支，其实就相当于删除远程分支
+
+10、解决分支冲突，dev分支test.txt文件新增“dev分支新增一行”，添加并提交，切换到master分支在test.txt文件新增“master分支新增一行”，添加并提交
 	此时合并dev分支
 $ git merge dev		#Merge conflict in test.txt 提示合并时test.txt文件冲突
 $ cat test.txt 		#此时可以查看到冲突的内容，Git用<<<<<<<，=======，>>>>>>>标记出不同分支的内容
@@ -161,25 +177,14 @@ $ git add test.txt		#重新添加
 $ git commit test.txt -m "解决test.txt文件冲突"
 $ git merge dev		#提交后重新合并
 
-9、图形查看上面29分支的合并情况
-$ git log --graph --pretty=oneline --abbrev-commit			#下方*号记录了本次合并两个分支的提交记录
-*   4d89d85 (HEAD -> master) Merge branch 'dev'				 可以看出新建dev分支后，dev提交了一次 -m “dev新增一行” a816187
-|\															 master分支提交第一次 -m “master分支新增一行” 61fc33a
-| * a816187 (dev) dev新增一行								 master分支提交第二次 -m “解决冲突”
-* | e1656cd 解决冲突										 master合并dev 
-* | 61fc33a master分支新增一行
-|/
-* acbe369 dev分支修改
-* 8349db3 (origin/master) 更新testgit.txt文件
-* a8eeb37 提交testgit.txt文件
-* 5c52a58 提交文件
 
-10、bug分支，如果工作区工作到一半，这时要创建一个bug分支修改bug,工作区的内容可以先储存起来
+
+11、bug分支，如果工作区工作到一半，这时要创建一个bug分支修改bug,工作区的内容可以先储存起来
 $ git stash 		#储存工作区改动
 $ git stash list	#查看储存列表
 $ git stash pop 	#恢复工作区的改动
 
-11、多人协作，多人协作的工作模式通常是这样：
+12、多人协作，多人协作的工作模式通常是这样：
 1、首先，可以试图用git push origin <branch-name>推送自己的修改；
 2、如果推送失败，则因为远程分支比你的本地更新，需要先用git pull试图合并；
 3、如果合并有冲突，则解决冲突，并在本地提交；
@@ -187,7 +192,7 @@ $ git stash pop 	#恢复工作区的改动
 	#如果git pull提示no tracking information，则说明本地分支和远程分支的链接关系没有创建，
 	用命令git branch --set-upstream-to <branch-name> origin/<branch-name>。
 	
-12、查看远程库信息
+13、查看远程库信息
 $ git remote -v 
 
 

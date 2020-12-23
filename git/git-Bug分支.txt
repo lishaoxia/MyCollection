@@ -1,0 +1,91 @@
+经常遇到的情况是，在dev分支上开发新feature的时候，测试人员提交了1个bug。这时，我们往往需要先将手头的工作停掉，先去修复bug。
+
+【停掉手头开发的工作】
+开发新feature的工作还没有完成，所以这时候不能commit，我们可以利用git stash，把当前工作现场“储藏”起来，等以后恢复现场后继续工作：
+
+$ git stash
+Saved working directory and index state WIP on dev: 6224937 add merge
+HEAD is now at 6224937 add merge
+这个时候，用git status查看版本库状态，可以看到working directory是clean的。因此可以放心地创建分支来修复bug。
+
+
+【创建bug分支】
+需要在master分支上修复，就从master创建临时分支：
+
+git checkout master
+git branch bug-101
+git checkout bug-101
+
+
+【修复bug】
+现在修复bug......
+
+
+【合并bug分支】
+bug修复完成后，切换到master分支，合并bug-101分支：
+
+git checkout master
+git merge --no-ff -m “fixed bug”  bug-101
+
+
+【返回之前的开发工作】
+bug修复完成了之后，就可以回到之前的开发工作了。
+
+git checkout dev
+查看下当前的版本库状态：
+$ git status 
+# On branch dev
+nothing to commit (working directory clean)
+工作区是干净的，刚才的工作现场存到哪去了？用 git stash list命令看看：
+$ git stash list
+stash@{0}: WIP on dev: 6224937 add merge
+
+工作现场还在，Git把stash内容存在某个地方了，但是需要恢复一下：
+git stash apply stash@{0}
+这时，之前的开发工作现场就又回来了。我们又可以开始之前的工作了。
+如果觉得stash内容不再需要了，可以用git stash drop来删除：
+git stash drop stash@{0}
+
+也可以使用git stash pop，等价于上面两个命令，从git栈中获取到最近一次stash进去的内容，恢复工作区的内容。。获取之后，会删除栈中对应的stash。
+由于可能会stash多次，git使用栈管理，我们可以使用git stash list查看所有的stash
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
