@@ -97,7 +97,7 @@ git clean -f和git reset --hard origin/master 结合使用（都执行），工�
 ----------------------------------------远程仓库GitHub-----------------------------------------
 
 1、本地Git仓库和GitHub仓库之间ssh加密
-$ ssh-keygen -t rsa -C "youremail@example.com"
+$ ssh-keygen -t rsa -C "l2638581@163.com"
 #执行此命令后，会在用户主目录生成.ssh目录，里面有id_rsa和id_rsa.pub两个文件
 #登陆GitHub，打开“Account settings”--“SSH Keys”页面,点“Add SSH Key”，填上任意Title，在Key文本框里粘贴id_rsa.pub文件的内容
 
